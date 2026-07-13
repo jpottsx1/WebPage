@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Jeffrey Potts — Writer</title>
+<meta name="description" content="Jeffrey Potts, author of Finding Tina, I Only Cook Supper, and Most Days. Read a sample, buy the books, and sign up for pre-release writing and the newsletter." />
+<style>
+  /* ============================================================
+     COLOUR SCHEME — sampled from Jeffreypotts.jpg
+     cream paper, deep teal, warm gold, rust, ink
+     ============================================================ */
+  :root {
+    --cream:      #ede3cf;
+    --cream-deep: #e3d6b8;
+    --paper:      #f5efe1;
+    --teal:       #234e58;
+    --teal-dark:  #17343b;
+    --gold:       #c9a24b;
+    --gold-soft:  #d8b36a;
+    --rust:       #b5442e;
+    --ink:        #2a2622;
+    --muted:      #6f6a5c;
+    --line:       rgba(42,38,34,0.14);
+  }
+
+  * { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    margin: 0;
+    font-family: Georgia, 'Times New Roman', serif;
+    color: var(--ink);
+    background: var(--cream);
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, .nav-brand, .btn, .eyebrow {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    letter-spacing: 0.01em;
+  }
+
+  a { color: var(--teal); }
+
+  .wrap { width: 100%; max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+  .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.22em;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--rust);
+    margin: 0 0 14px;
+  }
+
+  /* ---------- Nav ---------- */
+  header.nav {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(237,227,207,0.92);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line);
+  }
+  .nav-inner {
+    display: flex; align-items: center; justify-content: space-between;
+    height: 64px;
+  }
+  .nav-brand {
+    font-weight: 700; font-size: 1.05rem; letter-spacing: 0.16em;
+    text-transform: uppercase; color: var(--teal-dark); text-decoration: none;
+  }
+  .nav-links { display: flex; gap: 28px; }
+  .nav-links a {
+    text-decoration: none; color: var(--ink); font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 0.9rem; letter-spacing: 0.03em;
+  }
+  .nav-links a:hover { color: var(--rust); }
+  @media (max-width: 720px){ .nav-links { display: none; } }
+
+  /* ---------- Buttons ---------- */
+  .btn {
+    display: inline-block; cursor: pointer; text-decoration: none;
+    font-weight: 700; font-size: 0.9rem; letter-spacing: 0.04em;
+    padding: 13px 26px; border-radius: 2px; border: 1.5px solid transparent;
+    transition: transform .12s ease, background .2s ease, color .2s ease;
+  }
+  .btn:hover { transform: translateY(-2px); }
+  .btn-primary { background: var(--rust); color: var(--paper); }
+  .btn-primary:hover { background: #9c3826; }
+  .btn-teal { background: var(--teal); color: var(--paper); }
+  .btn-teal:hover { background: var(--teal-dark); }
+  .btn-ghost { background: transparent; color: var(--teal-dark); border-color: var(--teal); }
+  .btn-ghost:hover { background: var(--teal); color: var(--paper); }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 48px;
+    align-items: center; padding: 72px 0 64px;
+  }
+  .hero h1 {
+    font-size: clamp(2.4rem, 5vw, 3.8rem); line-height: 1.04;
+    margin: 0 0 20px; font-weight: 800; color: var(--teal-dark);
+  }
+  .hero h1 span { color: var(--rust); }
+  .hero p.lead {
+    font-size: 1.16rem; color: var(--ink); margin: 0 0 30px; max-width: 42ch;
+  }
+  .hero-actions { display: flex; gap: 14px; flex-wrap: wrap; }
+  .portrait-frame {
+    position: relative; padding: 14px; background: var(--paper);
+    border: 1px solid var(--line);
+    box-shadow: 0 24px 50px -28px rgba(23,52,59,0.55);
+    transform: rotate(-1.4deg);
+  }
+  .portrait-frame img { display: block; width: 100%; height: auto; }
+  .portrait-frame::after {
+    content: ""; position: absolute; inset: 0;
+    border: 1px solid var(--gold); margin: 6px; pointer-events: none;
+  }
+  @media (max-width: 820px){
+    .hero { grid-template-columns: 1fr; gap: 34px; padding: 48px 0; text-align: center; }
+    .hero p.lead { margin-left: auto; margin-right: auto; }
+    .hero-actions { justify-content: center; }
+    .portrait-frame { max-width: 320px; margin: 0 auto; transform: none; }
+  }
+
+  /* ---------- Section framing ---------- */
+  section { padding: 74px 0; }
+  .section-teal { background: var(--teal); color: var(--paper); }
+  .section-teal .eyebrow { color: var(--gold-soft); }
+  .section-teal h2 { color: var(--paper); }
+  .section-head { max-width: 640px; margin: 0 0 44px; }
+  .section-head.center { margin-left: auto; margin-right: auto; text-align: center; }
+  h2 { font-size: clamp(1.8rem, 3.5vw, 2.6rem); line-height: 1.1; margin: 0 0 14px; color: var(--teal-dark); font-weight: 800; }
+  .section-head p { font-size: 1.08rem; color: inherit; opacity: 0.92; margin: 0; }
+
+  /* ---------- Books ---------- */
+  .books { display: grid; grid-template-columns: repeat(3, 1fr); gap: 34px; }
+  @media (max-width: 860px){ .books { grid-template-columns: 1fr; max-width: 460px; margin: 0 auto; } }
+  .book {
+    background: var(--paper); border: 1px solid var(--line);
+    display: flex; flex-direction: column; overflow: hidden;
+    box-shadow: 0 18px 40px -30px rgba(23,52,59,0.6);
+  }
+  .book-cover { background: var(--cream-deep); padding: 22px 22px 0; }
+  .book-cover img {
+    display: block; width: 100%; height: auto;
+    box-shadow: 0 14px 26px -14px rgba(0,0,0,0.5);
+  }
+  .book-body { padding: 22px 22px 26px; display: flex; flex-direction: column; flex: 1; }
+  .book-body h3 { margin: 0 0 4px; font-size: 1.28rem; color: var(--teal-dark); }
+  .book-tag { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.16em; color: var(--rust); font-weight: 700; font-family: 'Helvetica Neue', Arial, sans-serif; margin-bottom: 12px; }
+  .book-body p { margin: 0 0 20px; font-size: 0.98rem; color: var(--ink); flex: 1; }
+  .book-actions { display: flex; flex-direction: column; gap: 10px; }
+  .book-actions .btn { text-align: center; padding: 11px 18px; }
+
+  /* ---------- Sample ---------- */
+  .sample-card {
+    background: var(--paper); border-left: 4px solid var(--gold);
+    padding: 40px 44px; box-shadow: 0 18px 44px -32px rgba(23,52,59,0.6);
+    max-width: 760px; margin: 0 auto;
+  }
+  .sample-card .from { font-family:'Helvetica Neue',Arial,sans-serif; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.16em; color:var(--rust); font-weight:700; margin-bottom:18px; }
+  .sample-card p { font-size: 1.14rem; line-height: 1.8; margin: 0 0 18px; }
+  .sample-card p:first-letter { }
+  .sample-card .dropcap:first-letter {
+    float: left; font-size: 3.4rem; line-height: 0.8; padding: 6px 10px 0 0;
+    color: var(--rust); font-weight: 800; font-family:'Helvetica Neue',Arial,sans-serif;
+  }
+  .sample-foot { margin-top: 26px; text-align: center; }
+
+  /* ---------- Signup ---------- */
+  .signup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
+  @media (max-width: 820px){ .signup-grid { grid-template-columns: 1fr; gap: 30px; } }
+  .signup-perks { list-style: none; padding: 0; margin: 22px 0 0; }
+  .signup-perks li { position: relative; padding-left: 30px; margin-bottom: 12px; font-size: 1.02rem; }
+  .signup-perks li::before {
+    content: ""; position: absolute; left: 0; top: 9px; width: 12px; height: 12px;
+    background: var(--gold); transform: rotate(45deg);
+  }
+  .signup-form {
+    background: var(--paper); color: var(--ink); padding: 34px; border: 1px solid rgba(255,255,255,0.15);
+    box-shadow: 0 22px 50px -30px rgba(0,0,0,0.6);
+  }
+  .signup-form label { display: block; font-family:'Helvetica Neue',Arial,sans-serif; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.12em; font-weight: 700; color: var(--teal-dark); margin: 0 0 6px; }
+  .signup-form input {
+    width: 100%; padding: 13px 14px; margin-bottom: 18px; font-size: 1rem;
+    font-family: Georgia, serif; border: 1px solid var(--line); background: #fff; color: var(--ink); border-radius: 2px;
+  }
+  .signup-form input:focus { outline: 2px solid var(--gold); border-color: var(--gold); }
+  .signup-form .btn { width: 100%; border: none; }
+  .form-note { font-size: 0.8rem; color: var(--muted); margin: 14px 0 0; text-align: center; font-family:'Helvetica Neue',Arial,sans-serif; }
+  .form-msg { display: none; margin-top: 16px; padding: 14px 16px; border-radius: 2px; font-family:'Helvetica Neue',Arial,sans-serif; font-size: 0.92rem; }
+  .form-msg.ok { display: block; background: rgba(35,78,88,0.1); border: 1px solid var(--teal); color: var(--teal-dark); }
+  .form-msg.err { display: block; background: rgba(181,68,46,0.1); border: 1px solid var(--rust); color: var(--rust); }
+
+  /* ---------- Footer ---------- */
+  footer { background: var(--teal-dark); color: var(--cream); padding: 46px 0 40px; }
+  .footer-inner { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 18px; }
+  .footer-inner a { color: var(--gold-soft); text-decoration: none; }
+  .footer-inner .brand { font-family:'Helvetica Neue',Arial,sans-serif; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; }
+  .admin-link { font-size: 0.72rem; opacity: 0.55; cursor: pointer; background: none; border: none; color: var(--cream); font-family:'Helvetica Neue',Arial,sans-serif; letter-spacing:0.08em; }
+  .admin-link:hover { opacity: 0.95; text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<!-- ===================== NAV ===================== -->
+<header class="nav">
+  <div class="wrap nav-inner">
+    <a href="#top" class="nav-brand">Jeffrey Potts</a>
+    <nav class="nav-links">
+      <a href="#books">Books</a>
+      <a href="#sample">Read a Sample</a>
+      <a href="#signup">Newsletter</a>
+    </nav>
+  </div>
+</header>
+
+<a id="top"></a>
+
+<!-- ===================== HERO ===================== -->
+<div class="wrap">
+  <div class="hero">
+    <div>
+      <p class="eyebrow">Author &amp; Storyteller</p>
+      <h1>Honest stories about <span>food, family &amp; getting back up.</span></h1>
+      <p class="lead">I write memoirs that don't look away — from the search for the right person, to a kitchen key on a string, to a thirty-year fight to stay here. Pull up a chair.</p>
+      <div class="hero-actions">
+        <a href="#books" class="btn btn-primary">Explore the Books</a>
+        <a href="#signup" class="btn btn-ghost">Get Early Chapters</a>
+      </div>
+    </div>
+    <div class="portrait-frame">
+      <img src="Jeffreypotts.jpg" alt="Portrait of author Jeffrey Potts" />
+    </div>
+  </div>
+</div>
+
+<!-- ===================== BOOKS ===================== -->
+<section id="books">
+  <div class="wrap">
+    <div class="section-head center">
+      <p class="eyebrow">The Books</p>
+      <h2>Three true stories worth your evening</h2>
+      <p>Available in paperback and ebook. Tap a cover to read more or buy your copy on Amazon.</p>
+    </div>
+    <div class="books">
+
+      <!-- Finding Tina -->
+      <article class="book">
+        <div class="book-cover"><img src="Books/Finding tina.jpg" alt="Finding Tina book cover" /></div>
+        <div class="book-body">
+          <div class="book-tag">Memoir · Love</div>
+          <h3>Finding Tina</h3>
+          <p>The dating journey that led to the one that mattered most. A wry, tender tour through the near-misses, wrong turns, and Palermo doorways of a life spent looking for love — until it finally looked back.</p>
+          <div class="book-actions">
+            <!-- TODO: replace href with the real Amazon product URL -->
+            <a class="btn btn-primary" href="#" data-amazon="Finding Tina Jeffrey Potts" target="_blank" rel="noopener">Buy on Amazon</a>
+            <a class="btn btn-ghost" href="#sample">Read a Sample</a>
+          </div>
+        </div>
+      </article>
+
+      <!-- I Only Cook Supper -->
+      <article class="book">
+        <div class="book-cover"><img src="Books/I only Cook Supper.jpg" alt="I Only Cook Supper book cover" /></div>
+        <div class="book-body">
+          <div class="book-tag">Memoir · Cookbook</div>
+          <h3>I Only Cook Supper</h3>
+          <p>A memoir of food, family, and the key around my neck. Part memoir, part cookbook, all true — the story of a mill-town boyhood told through the meals that held a family together, and the one rule his mother said only once.</p>
+          <div class="book-actions">
+            <!-- TODO: replace href with the real Amazon product URL -->
+            <a class="btn btn-primary" href="#" data-amazon="I Only Cook Supper Jeffrey Potts" target="_blank" rel="noopener">Buy on Amazon</a>
+            <a class="btn btn-ghost" href="#sample">Read a Sample</a>
+          </div>
+        </div>
+      </article>
+
+      <!-- Most Days -->
+      <article class="book">
+        <div class="book-cover"><img src="Books/Most Days.png" alt="Most Days book cover" /></div>
+        <div class="book-body">
+          <div class="book-tag">Memoir · Mental Health</div>
+          <h3>Most Days</h3>
+          <p>A memoir of bipolar disorder. A thirty-year fight, a thousand bad days, and the stubborn act of still getting up. Not recovered, not cured — still here, and telling the truth about what that costs and what it's worth.</p>
+          <div class="book-actions">
+            <!-- TODO: replace href with the real Amazon product URL -->
+            <a class="btn btn-primary" href="#" data-amazon="Most Days Jeffrey Potts memoir" target="_blank" rel="noopener">Buy on Amazon</a>
+            <a class="btn btn-ghost" href="#sample">Read a Sample</a>
+          </div>
+        </div>
+      </article>
+
+    </div>
+  </div>
+</section>
+
+<!-- ===================== SAMPLE ===================== -->
+<section id="sample" class="section-teal">
+  <div class="wrap">
+    <div class="section-head center">
+      <p class="eyebrow">Read a Sample</p>
+      <h2>An excerpt from <em>I Only Cook Supper</em></h2>
+    </div>
+    <div class="sample-card">
+      <div class="from">Chapter One — The Key</div>
+      <p class="dropcap">She handed me a key on a length of kitchen string and told me she only cooked supper. She said it once, the way she said most important things, and then she turned back to the stove as if the matter were closed. I was nine. The key was warm from her pocket, and it stayed warm the whole walk to school, knocking against my breastbone like a second, smaller heart.</p>
+      <p>What she meant, I would spend the next thirty years working out. Breakfast you fend for yourself. Lunch is the world's problem. But supper — supper is the one meal a family owes each other, the one you come home for, the one nobody eats alone if there's any way around it. In our house the day did not truly end until the table did.</p>
+      <p>This is a book about that table. About the mill town that fed us and nearly finished us, about the recipes I've carried like heirlooms, and about a mother who could say more with a set of instructions for pot roast than most people manage in a lifetime of talking.</p>
+      <div class="sample-foot">
+        <a class="btn btn-teal" style="background:var(--gold);color:var(--teal-dark);" href="#books">Keep Reading — Get the Book</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== SIGNUP ===================== -->
+<section id="signup">
+  <div class="wrap">
+    <div class="signup-grid">
+      <div>
+        <p class="eyebrow">The Newsletter</p>
+        <h2>Early chapters, straight to your inbox</h2>
+        <p style="font-size:1.08rem;color:var(--ink);margin:0;">Join the readers who get my writing first. No spam, no filler — just the work, a little early, and the occasional story from behind the pages.</p>
+        <ul class="signup-perks">
+          <li>Pre-release chapters and writing samples</li>
+          <li>Launch news and reader-only pricing</li>
+          <li>Notes on the stories behind the books</li>
+        </ul>
+      </div>
+
+      <form class="signup-form" id="signupForm" novalidate>
+        <label for="name">Your name</label>
+        <input type="text" id="name" name="name" placeholder="Jane Reader" autocomplete="name" required />
+
+        <label for="email">Email address</label>
+        <input type="email" id="email" name="email" placeholder="jane@example.com" autocomplete="email" required />
+
+        <button type="submit" class="btn btn-primary">Send Me Early Chapters</button>
+        <p class="form-note">Free. Unsubscribe anytime.</p>
+        <div class="form-msg" id="formMsg" role="status" aria-live="polite"></div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== FOOTER ===================== -->
+<footer>
+  <div class="wrap footer-inner">
+    <span class="brand">Jeffrey Potts</span>
+    <span>&copy; <span id="year"></span> Jeffrey Potts. All rights reserved.</span>
+    <button class="admin-link" id="exportBtn" title="Download collected signups as CSV (site owner)">Export signups (CSV)</button>
+  </div>
+</footer>
+
+<script>
+/* ============================================================
+   SIGNUP HANDLING  —  frontend-only (for now)
+   ------------------------------------------------------------
+   Collected signups are stored in this browser and can be
+   exported as a CSV that opens directly in Excel.
+
+   >>> TO RECEIVE REAL VISITOR SIGNUPS + AUTO WELCOME EMAILS <<<
+   Replace the body of sendToBackend() below with a POST to
+   your form service (Formspree, Mailchimp, ConvertKit, a small
+   server, etc.). That service is what stores emails centrally
+   and fires the welcome email. Everything else already works.
+   ============================================================ */
+
+  var STORAGE_KEY = 'jp_signups';
+
+  // ---- storage helpers -------------------------------------
+  function getSignups() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+    catch (e) { return []; }
+  }
+  function saveSignups(list) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+  }
+
+  // ---- REAL backend hook (swap this out) -------------------
+  // Return a Promise. Resolves = success. Reject = show error.
+  function sendToBackend(entry) {
+    // ----- EXAMPLE (uncomment + set your endpoint) -----------
+    // return fetch('https://formspree.io/f/YOUR_ID', {
+    //   method: 'POST',
+    //   headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+    //   body: JSON.stringify(entry)
+    // }).then(function (r) { if (!r.ok) throw new Error('bad'); });
+
+    // Frontend-only default: pretend-send, always succeeds.
+    return Promise.resolve();
+  }
+
+  // ---- welcome message (stands in for the welcome email) ---
+  function welcomeText(name) {
+    var first = (name || '').trim().split(/\s+/)[0] || 'friend';
+    return "Welcome aboard, " + first + " — you're on the list! " +
+           "Your first early chapter is on its way. Thanks for reading. — Jeffrey";
+  }
+
+  // ---- form submit -----------------------------------------
+  var form = document.getElementById('signupForm');
+  var msg  = document.getElementById('formMsg');
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var name  = document.getElementById('name').value.trim();
+    var email = document.getElementById('email').value.trim();
+    var emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+    if (!name || !emailOk) {
+      msg.className = 'form-msg err';
+      msg.textContent = !name
+        ? 'Please add your name so I know who I’m writing to.'
+        : 'That email doesn’t look right — mind checking it?';
+      return;
+    }
+
+    var entry = { name: name, email: email, date: new Date().toISOString() };
+
+    var btn = form.querySelector('button[type=submit]');
+    btn.disabled = true; btn.textContent = 'Sending…';
+
+    sendToBackend(entry).then(function () {
+      // keep a local copy for the CSV export
+      var list = getSignups();
+      // avoid duplicate emails
+      if (!list.some(function (x){ return x.email.toLowerCase() === email.toLowerCase(); })) {
+        list.push(entry);
+        saveSignups(list);
+      }
+      msg.className = 'form-msg ok';
+      msg.textContent = welcomeText(name);
+      form.reset();
+    }).catch(function () {
+      msg.className = 'form-msg err';
+      msg.textContent = 'Something went wrong sending that. Please try again in a moment.';
+    }).then(function () {
+      btn.disabled = false; btn.textContent = 'Send Me Early Chapters';
+    });
+  });
+
+  // ---- CSV export (opens in Excel) -------------------------
+  function toCSV(rows) {
+    var head = ['Name', 'Email', 'Date signed up'];
+    function esc(v) { return '"' + String(v).replace(/"/g, '""') + '"'; }
+    var lines = [head.map(esc).join(',')];
+    rows.forEach(function (r) {
+      lines.push([esc(r.name), esc(r.email), esc(r.date)].join(','));
+    });
+    return '﻿' + lines.join('\r\n'); // BOM so Excel reads UTF-8
+  }
+
+  document.getElementById('exportBtn').addEventListener('click', function () {
+    var list = getSignups();
+    if (!list.length) {
+      alert('No signups collected in this browser yet.');
+      return;
+    }
+    var blob = new Blob([toCSV(list)], { type: 'text/csv;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'jeffrey-potts-signups.csv';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  // ---- Amazon buttons: search fallback until real URLs -----
+  // When you have the real product links, just set the href on
+  // each "Buy on Amazon" link and delete this block.
+  Array.prototype.forEach.call(document.querySelectorAll('[data-amazon]'), function (el) {
+    if (el.getAttribute('href') === '#') {
+      el.setAttribute('href',
+        'https://www.amazon.com/s?k=' + encodeURIComponent(el.getAttribute('data-amazon')));
+    }
+  });
+
+  document.getElementById('year').textContent = new Date().getFullYear();
+</script>
+</body>
+</html>
