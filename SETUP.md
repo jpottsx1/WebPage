@@ -100,3 +100,13 @@ Your subscribers live in the D1 database. To see or export them:
 - **Privacy:** the list lives in your private Cloudflare database. It is not
   visible on the website and not accessible to other visitors.
 - If email sending ever fails, the signup is still saved — no subscriber is lost.
+
+## Publishing a blog post
+
+The blog is plain static pages under `blog/` — no login, no database.
+
+1. Ask me (or write directly) a new file `blog/your-post-slug.html`, copying
+   the header/footer chrome from `blog/index.html` or `privacy.html`.
+2. Add a `<li>` entry to the `.post-list` in `blog/index.html`, newest first
+   — there's a commented-out example in that file showing the pattern.
+3. Commit and push; Cloudflare redeploys automatically.
