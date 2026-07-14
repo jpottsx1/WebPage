@@ -473,51 +473,14 @@
 
 <script>
 /* ============================================================
-   SIGNUP HANDLING  —  frontend-only (for now)
+   SIGNUP HANDLING
    ------------------------------------------------------------
-   Collected signups are stored in this browser and can be
-   exported as a CSV that opens directly in Excel.
-
-   >>> TO RECEIVE REAL VISITOR SIGNUPS + AUTO WELCOME EMAILS <<<
-   Replace the body of sendToBackend() below with a POST to
-   your form service (Formspree, Mailchimp, ConvertKit, a small
-   server, etc.). That service is what stores emails centrally
-   and fires the welcome email. Everything else already works.
+   The form posts to the Cloudflare Pages Function at
+   /api/subscribe, which stores the subscriber in a D1 database
+   (with a server-side duplicate check) and sends the welcome
+   email via Resend. One-time setup: see SETUP.md.
    ============================================================ */
 
-  var STORAGE_KEY = 'jp_signups';
-
-  // ---- storage helpers -------------------------------------
-  function getSignups() {
-    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
-    catch (e) { return []; }
-  }
-  function saveSignups(list) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-  }
-
-  // ---- REAL backend hook (swap this out) -------------------
-  // Return a Promise. Resolves = success. Reject = show error.
-  function sendToBackend(entry) {
-    // ----- EXAMPLE (uncomment + set your endpoint) -----------
-    // return fetch('https://formspree.io/f/YOUR_ID', {
-    //   method: 'POST',
-    //   headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
-    //   body: JSON.stringify(entry)
-    // }).then(function (r) { if (!r.ok) throw new Error('bad'); });
-
-    // Frontend-only default: pretend-send, always succeeds.
-    return Promise.resolve();
-  }
-
-  // ---- welcome message (stands in for the welcome email) ---
-  function welcomeText(name) {
-    var first = (name || '').trim().split(/\s+/)[0] || 'friend';
-    return "Welcome aboard, " + first + " — you're on the list! " +
-           "Your first early chapter is on its way. Thanks for reading. — Jeffrey";
-  }
-
-  // ---- form submit -----------------------------------------
   var form = document.getElementById('signupForm');
   var msg  = document.getElementById('formMsg');
 
@@ -535,30 +498,30 @@
       return;
     }
 
-    // ---- duplicate registration check ----
-    var existing = getSignups();
-    if (existing.some(function (x){ return x.email.toLowerCase() === email.toLowerCase(); })) {
-      msg.className = 'form-msg err';
-      msg.textContent = 'Looks like ' + email + ' is already on the list — you’re all set. Thanks!';
-      return;
-    }
-
-    var entry = { name: name, email: email, date: new Date().toISOString() };
-
+    var first = name.split(/\s+/)[0] || 'friend';
     var btn = form.querySelector('button[type=submit]');
     btn.disabled = true; btn.textContent = 'Sending…';
 
-    sendToBackend(entry).then(function () {
-      // keep a local copy for the CSV export
-      var list = getSignups();
-      // avoid duplicate emails
-      if (!list.some(function (x){ return x.email.toLowerCase() === email.toLowerCase(); })) {
-        list.push(entry);
-        saveSignups(list);
+    fetch('/api/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({ name: name, email: email })
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (data) {
+        return { status: r.status, data: data };
+      });
+    }).then(function (res) {
+      if (res.status === 200 || res.status === 201) {
+        msg.className = 'form-msg ok';
+        msg.textContent = 'Welcome aboard, ' + first + ' — you’re on the list! ' +
+          'Check your inbox for a welcome note and your first early chapter. Thanks for reading. — Jeffrey';
+        form.reset();
+      } else if (res.status === 409) {
+        msg.className = 'form-msg err';
+        msg.textContent = 'Looks like ' + email + ' is already on the list — you’re all set. Thanks!';
+      } else {
+        throw new Error((res.data && res.data.error) || 'request failed');
       }
-      msg.className = 'form-msg ok';
-      msg.textContent = welcomeText(name);
-      form.reset();
     }).catch(function () {
       msg.className = 'form-msg err';
       msg.textContent = 'Something went wrong sending that. Please try again in a moment.';
