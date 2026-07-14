@@ -6,10 +6,10 @@ email — all on Cloudflare's free tier, with GitHub still in charge of
 deploys. You do **not** need to move your domain off Namecheap.
 
 The code is already in the repo:
-- `src/worker.js` — serves the site and handles `POST /api/subscribe`
+- `src/worker.js` — serves the site and handles `POST /api/subscribe` and `POST /api/contact`
 - `wrangler.jsonc` — declares the `DB` (D1) binding in code
 - `schema.sql` — the database table
-- The signup form posts to `/api/subscribe` automatically.
+- The signup and contact forms post to their endpoints automatically.
 
 You just need to do the clicks below once.
 
@@ -59,7 +59,10 @@ Variables and Secrets** → add these three, then **Save and deploy**:
 |---|---|---|
 | `RESEND_API_KEY` | your `re_...` key | **Encrypt** (secret) |
 | `FROM_EMAIL` | `Jeffrey Potts <me@jeffreypotts.ca>` | Text |
-| `NOTIFY_EMAIL` | `me@jeffreypotts.ca` (optional — alerts you on each signup) | Text |
+| `NOTIFY_EMAIL` | `me@jeffreypotts.ca` | Text |
+
+`NOTIFY_EMAIL` is now **required** — it's where contact form messages are
+delivered, and it also gets a copy of each newsletter signup.
 
 ## 5. Deploy and test
 

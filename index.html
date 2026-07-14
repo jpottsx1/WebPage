@@ -217,12 +217,15 @@
     box-shadow: 0 22px 50px -30px rgba(0,0,0,0.6);
   }
   .signup-form label { display: block; font-family:'Helvetica Neue',Arial,sans-serif; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.12em; font-weight: 700; color: var(--teal-dark); margin: 0 0 6px; }
-  .signup-form input {
+  .signup-form input,
+  .signup-form textarea {
     width: 100%; padding: 13px 14px; margin-bottom: 18px; font-size: 1rem;
     font-family: Georgia, serif; border: 1px solid var(--line); background: #fff; color: var(--ink); border-radius: 2px;
   }
-  .signup-form input:focus { outline: 2px solid var(--gold); border-color: var(--gold); }
+  .signup-form textarea { resize: vertical; min-height: 110px; }
+  .signup-form input:focus, .signup-form textarea:focus { outline: 2px solid var(--gold); border-color: var(--gold); }
   .signup-form .btn { width: 100%; border: none; }
+  .hp-field { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
   .form-note { font-size: 0.8rem; color: var(--muted); margin: 14px 0 0; text-align: center; font-family:'Helvetica Neue',Arial,sans-serif; }
   .form-msg { display: none; margin-top: 16px; padding: 14px 16px; border-radius: 2px; font-family:'Helvetica Neue',Arial,sans-serif; font-size: 0.92rem; }
   .form-msg.ok { display: block; background: rgba(35,78,88,0.1); border: 1px solid var(--teal); color: var(--teal-dark); }
@@ -249,6 +252,7 @@
       <a href="#about">About</a>
       <a href="#reviews">Reviews</a>
       <a href="#signup">Newsletter</a>
+      <a href="#contact">Contact</a>
     </nav>
   </div>
 </header>
@@ -461,12 +465,44 @@
   </div>
 </section>
 
+<!-- ===================== CONTACT ===================== -->
+<section id="contact" class="section-teal">
+  <div class="wrap">
+    <div class="signup-grid">
+      <div>
+        <p class="eyebrow">Get In Touch</p>
+        <h2>Send Jeffrey a message</h2>
+        <p style="font-size:1.08rem;margin:0;">Questions about a book, an event, or just want to say hello — this goes straight to my inbox. I read everything.</p>
+      </div>
+
+      <form class="signup-form" id="contactForm" novalidate>
+        <label for="cname">Your name</label>
+        <input type="text" id="cname" name="name" placeholder="Jane Reader" autocomplete="name" required />
+
+        <label for="cemail">Email address</label>
+        <input type="email" id="cemail" name="email" placeholder="jane@example.com" autocomplete="email" required />
+
+        <label for="cmessage">Message</label>
+        <textarea id="cmessage" name="message" placeholder="What's on your mind?" required></textarea>
+
+        <div class="hp-field" aria-hidden="true">
+          <label for="cwebsite">Website</label>
+          <input type="text" id="cwebsite" name="website" tabindex="-1" autocomplete="off" />
+        </div>
+
+        <button type="submit" class="btn btn-primary">Send Message</button>
+        <div class="form-msg" id="contactMsg" role="status" aria-live="polite"></div>
+      </form>
+    </div>
+  </div>
+</section>
+
 <!-- ===================== FOOTER ===================== -->
 <footer>
   <div class="wrap footer-inner">
     <span class="brand">Jeffrey Potts</span>
     <span>&copy; <span id="year"></span> Jeffrey Potts. All rights reserved.</span>
-    <span class="footer-links"><a href="#books">Books</a> &nbsp;·&nbsp; <a href="#signup">Newsletter</a></span>
+    <span class="footer-links"><a href="#books">Books</a> &nbsp;·&nbsp; <a href="#contact">Contact</a> &nbsp;·&nbsp; <a href="#signup">Newsletter</a> &nbsp;·&nbsp; <a href="privacy.html">Privacy Policy</a></span>
   </div>
 </footer>
 
@@ -526,6 +562,56 @@
       msg.textContent = 'Something went wrong sending that. Please try again in a moment.';
     }).then(function () {
       btn.disabled = false; btn.textContent = 'Send Me Early Chapters';
+    });
+  });
+
+  // ---- CONTACT FORM ------------------------------------------
+  // Posts to /api/contact, which emails the message via Resend.
+  var cForm = document.getElementById('contactForm');
+  var cMsg  = document.getElementById('contactMsg');
+
+  cForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var name    = document.getElementById('cname').value.trim();
+    var email   = document.getElementById('cemail').value.trim();
+    var message = document.getElementById('cmessage').value.trim();
+    var website = document.getElementById('cwebsite').value.trim(); // honeypot
+    var emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+    if (!name || !emailOk || !message) {
+      cMsg.className = 'form-msg err';
+      cMsg.textContent = !name
+        ? 'Please add your name so I know who I’m writing to.'
+        : !emailOk
+          ? 'That email doesn’t look right — mind checking it?'
+          : 'Please add a message.';
+      return;
+    }
+
+    var cBtn = cForm.querySelector('button[type=submit]');
+    cBtn.disabled = true; cBtn.textContent = 'Sending…';
+
+    fetch('/api/contact', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({ name: name, email: email, message: message, website: website })
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (data) {
+        return { status: r.status, data: data };
+      });
+    }).then(function (res) {
+      if (res.status === 200 || res.status === 201) {
+        cMsg.className = 'form-msg ok';
+        cMsg.textContent = 'Thanks, ' + name.split(/\s+/)[0] + ' — your message is on its way. Jeffrey will get back to you soon.';
+        cForm.reset();
+      } else {
+        throw new Error((res.data && res.data.error) || 'request failed');
+      }
+    }).catch(function () {
+      cMsg.className = 'form-msg err';
+      cMsg.textContent = 'Something went wrong sending that. Please try again in a moment.';
+    }).then(function () {
+      cBtn.disabled = false; cBtn.textContent = 'Send Message';
     });
   });
 
