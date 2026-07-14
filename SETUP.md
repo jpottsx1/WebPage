@@ -1,14 +1,15 @@
 # Newsletter backend — one-time setup
 
-Your site already runs on Cloudflare Pages (deployed from GitHub). This adds a
-backend that stores subscribers and sends a welcome email — all on Cloudflare's
-free tier, with GitHub still in charge of deploys. You do **not** need to move
-your domain off Namecheap.
+Your site runs on Cloudflare Workers with static assets (deployed from
+GitHub). This adds a backend that stores subscribers and sends a welcome
+email — all on Cloudflare's free tier, with GitHub still in charge of
+deploys. You do **not** need to move your domain off Namecheap.
 
 The code is already in the repo:
-- `functions/api/subscribe.js` — the backend function (runs at `/api/subscribe`)
+- `src/worker.js` — serves the site and handles `POST /api/subscribe`
+- `wrangler.jsonc` — declares the `DB` (D1) binding in code
 - `schema.sql` — the database table
-- The signup form posts to it automatically.
+- The signup form posts to `/api/subscribe` automatically.
 
 You just need to do the clicks below once.
 
@@ -28,13 +29,11 @@ You just need to do the clicks below once.
    );
    ```
 
-## 2. Bind the database to your Pages project
+## 2. Bind the database
 
-1. Cloudflare dashboard → **Workers & Pages** → your site → **Settings → Functions**.
-2. Under **D1 database bindings** → **Add binding**.
-   - Variable name: **`DB`** (exactly this)
-   - D1 database: **jeffreypotts-newsletter**
-3. Save.
+Already done in code — `wrangler.jsonc` declares the `DB` binding pointing at
+`jeffreypotts-newsletter`. It takes effect automatically on the next deploy;
+no dashboard step needed.
 
 ## 3. Set up Resend (sends the email)
 
@@ -51,10 +50,10 @@ You just need to do the clicks below once.
 > Before the domain verifies, Resend runs in test mode — it can only email your
 > own address. Once verified, it can email any subscriber.
 
-## 4. Add the secrets to your Pages project
+## 4. Add the secrets to your Worker
 
-Cloudflare dashboard → your site → **Settings → Environment variables**
-(Production) → add these three, then **Save** and **redeploy**:
+Cloudflare dashboard → **Workers & Pages** → your site → **Settings →
+Variables and Secrets** → add these three, then **Save and deploy**:
 
 | Variable | Value | Type |
 |---|---|---|
@@ -64,7 +63,7 @@ Cloudflare dashboard → your site → **Settings → Environment variables**
 
 ## 5. Deploy and test
 
-1. Push (already done) → Cloudflare Pages redeploys automatically with the function.
+1. Push (already done) → Cloudflare redeploys the Worker automatically.
 2. Go to your live site, sign up with your own email.
 3. You should get the welcome email, and the subscriber should appear in D1.
 

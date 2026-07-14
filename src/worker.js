@@ -1,17 +1,18 @@
 /**
- * Cloudflare Pages Function — POST /api/subscribe
+ * Cloudflare Worker — entry point
  * ------------------------------------------------------------------
- * Handles newsletter signups for the Jeffrey Potts site:
+ * Serves the static site and handles POST /api/subscribe for
+ * newsletter signups:
  *   1. Validates the submitted name + email
  *   2. Stores the subscriber in a D1 database (duplicate-safe)
  *   3. Sends a welcome email to the subscriber via Resend
- *   4. (Optional) emails you a notification of the new signup
+ *   4. (Optional) emails the author a notification of the new signup
  *
- * Required bindings / variables (set in Cloudflare Pages settings):
- *   DB              — D1 database binding (Settings → Functions → D1 bindings)
- *   RESEND_API_KEY  — secret, your Resend API key
+ * Required bindings / variables (set in Cloudflare dashboard):
+ *   DB              — D1 database binding (declared in wrangler.jsonc)
+ *   RESEND_API_KEY  — secret, Resend API key
  *   FROM_EMAIL      — e.g. "Jeffrey Potts <me@jeffreypotts.ca>"
- *   NOTIFY_EMAIL    — optional, where to send new-signup alerts (e.g. me@jeffreypotts.ca)
+ *   NOTIFY_EMAIL    — optional, where to send new-signup alerts
  *
  * See SETUP.md for the one-time setup steps.
  */
@@ -25,10 +26,7 @@ function json(status, body) {
   });
 }
 
-export async function onRequestPost(context) {
-  const { request, env } = context;
-
-  // ---- parse input ----
+async function handleSubscribe(request, env) {
   let payload;
   try {
     payload = await request.json();
@@ -150,3 +148,13 @@ function escapeHtml(s) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
 }
+
+export default {
+  async fetch(request, env, ctx) {
+    const url = new URL(request.url);
+    if (url.pathname === "/api/subscribe" && request.method === "POST") {
+      return handleSubscribe(request, env);
+    }
+    return env.ASSETS.fetch(request);
+  },
+};
