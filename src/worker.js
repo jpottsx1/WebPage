@@ -10,16 +10,27 @@
  *   POST /api/contact — contact form
  *     1. Validates name + email + message (honeypot field rejects bots)
  *     2. Emails the message to the author via Resend, reply-to the sender
+ *   /downloads/*, /admin/* — password-gated file downloads + blog CMS,
+ *     see src/lib/downloads.js and src/lib/blog.js
+ *   /blog/* — dynamic blog, see src/lib/blog.js
  *
  * Required bindings / variables (set in Cloudflare dashboard):
  *   DB              — D1 database binding (declared in wrangler.jsonc)
+ *   FILES           — R2 bucket binding (declared in wrangler.jsonc)
  *   RESEND_API_KEY  — secret, Resend API key
  *   FROM_EMAIL      — e.g. "Jeffrey Potts <me@jeffreypotts.ca>"
  *   NOTIFY_EMAIL    — where new-signup alerts and contact messages go
  *                     (required for /api/contact, optional for signups)
+ *   DOWNLOAD_PASSWORD_1/2/3 — visitor passwords for each download section
+ *   ADMIN_PASSWORD_1/2/3    — admin passwords for each section's file manager
+ *   ADMIN_PASSWORD_BLOG     — admin password for the blog CMS
+ *   SESSION_SECRET          — random string used to sign login-session cookies
  *
  * See SETUP.md for the one-time setup steps.
  */
+
+import { handleDownloadsRequest } from "./lib/downloads.js";
+import { handleBlogRequest } from "./lib/blog.js";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -221,6 +232,10 @@ export default {
     if (url.pathname === "/api/contact" && request.method === "POST") {
       return handleContact(request, env);
     }
+    const downloadsResponse = await handleDownloadsRequest(request, env, url);
+    if (downloadsResponse) return downloadsResponse;
+    const blogResponse = await handleBlogRequest(request, env, url);
+    if (blogResponse) return blogResponse;
     return env.ASSETS.fetch(request);
   },
 };

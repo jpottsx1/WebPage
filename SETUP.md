@@ -64,7 +64,66 @@ Variables and Secrets** → add these three, then **Save and deploy**:
 `NOTIFY_EMAIL` is now **required** — it's where contact form messages are
 delivered, and it also gets a copy of each newsletter signup.
 
-## 5. Deploy and test
+## 5. Create the R2 bucket (stores downloadable files + blog images)
+
+1. Cloudflare dashboard → **Storage & Databases → R2** → **Create bucket**.
+2. Name it exactly `jeffreypotts-files` → Create. (`wrangler.jsonc` already
+   declares the `FILES` binding pointing at this name — no dashboard binding
+   step needed, same as the D1 database.)
+
+## 6. Run the new database tables
+
+Cloudflare dashboard → **D1 → jeffreypotts-newsletter → Console** → paste and
+run:
+
+```sql
+CREATE TABLE IF NOT EXISTS download_files (
+  id          TEXT PRIMARY KEY,
+  section     TEXT NOT NULL,
+  filename    TEXT NOT NULL,
+  r2_key      TEXT NOT NULL,
+  size_bytes  INTEGER NOT NULL,
+  uploaded_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_download_files_section ON download_files (section, uploaded_at);
+
+CREATE TABLE IF NOT EXISTS posts (
+  id          TEXT PRIMARY KEY,
+  slug        TEXT NOT NULL UNIQUE,
+  title       TEXT NOT NULL,
+  body_html   TEXT NOT NULL,
+  image_key   TEXT,
+  created_at  TEXT NOT NULL,
+  updated_at  TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts (created_at);
+```
+
+(This is also in `schema.sql` if you'd rather run it via `wrangler d1
+execute` instead of pasting into the console.)
+
+## 7. Add the password secrets
+
+Same **Settings → Variables and Secrets** screen as step 4. Add all of
+these, each type **Encrypt (secret)**, then **Save and deploy**:
+
+| Variable | Purpose |
+|---|---|
+| `DOWNLOAD_PASSWORD_1` | Visitor password for Section 1's download page |
+| `DOWNLOAD_PASSWORD_2` | Visitor password for Section 2's download page |
+| `DOWNLOAD_PASSWORD_3` | Visitor password for Section 3's download page |
+| `ADMIN_PASSWORD_1` | Admin password to upload/delete files in Section 1 |
+| `ADMIN_PASSWORD_2` | Admin password to upload/delete files in Section 2 |
+| `ADMIN_PASSWORD_3` | Admin password to upload/delete files in Section 3 |
+| `ADMIN_PASSWORD_BLOG` | Admin password for the blog CMS (add/edit/delete posts) |
+| `SESSION_SECRET` | Any long random string (e.g. from a password generator) — signs login-session cookies. Not a password you use yourself; just needs to be unpredictable. |
+
+Pick strong, unique values for each — whoever holds `DOWNLOAD_PASSWORD_1`
+can only see Section 1's files; `ADMIN_PASSWORD_1` is a separate, more
+sensitive password that also lets someone delete those files, so keep
+admin passwords to yourself.
+
+## 8. Deploy and test
 
 1. Push (already done) → Cloudflare redeploys the Worker automatically.
 2. Go to your live site, sign up with your own email.
@@ -103,10 +162,28 @@ Your subscribers live in the D1 database. To see or export them:
 
 ## Publishing a blog post
 
-The blog is plain static pages under `blog/` — no login, no database.
+The blog is now a full CMS — go to **jeffreypotts.ca/admin/blog**, log in
+with `ADMIN_PASSWORD_BLOG`, and use the "New Post" form (title, HTML body,
+optional image). New posts appear at the top of **/blog/** immediately —
+no commit or deploy needed. Edit and Delete are on the same page, next to
+each existing post.
 
-1. Ask me (or write directly) a new file `blog/your-post-slug.html`, copying
-   the header/footer chrome from `blog/index.html` or `privacy.html`.
-2. Add a `<li>` entry to the `.post-list` in `blog/index.html`, newest first
-   — there's a commented-out example in that file showing the pattern.
-3. Commit and push; Cloudflare redeploys automatically.
+The post body field accepts raw HTML (bold, links, paragraphs, etc.) —
+whatever you type is rendered as-is on the post page.
+
+## Using the download sections
+
+Each of the three sections has two URLs:
+
+- `jeffreypotts.ca/downloads/section-1` (and `section-2`, `section-3`) —
+  the page you share with visitors. They enter `DOWNLOAD_PASSWORD_N` to see
+  and download the files.
+- `jeffreypotts.ca/admin/section-1` (etc.) — where you log in with
+  `ADMIN_PASSWORD_N` to upload new files or delete old ones. Changes show
+  up on the visitor page immediately.
+
+Neither URL is linked from the site's navigation — they're only reachable
+if you share the link directly, matching how you'd hand out a password.
+The section labels ("Section 1", "Section 2", "Section 3") are placeholders
+in `src/lib/downloads.js` — tell me what each section is actually for and
+I'll rename them in one edit.

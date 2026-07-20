@@ -19,5 +19,11 @@
       "database_name": "jeffreypotts-newsletter",
       "database_id": "339b4808-2fcf-4d9a-b69b-ee5a66b758f5"
     }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "FILES",
+      "bucket_name": "jeffreypotts-files"
+    }
   ]
 }
