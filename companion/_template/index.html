@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BOOK TITLE — Reader’s Companion — Jeffrey Potts</title>
+<meta name="description" content="A spoiler-free guide to the people and places of BOOK TITLE. Say how far you’ve read and see only what you’ve reached." />
+<link rel="stylesheet" href="../companion.css" />
+<style>
+  :root {
+    --cream:      #ede3cf;
+    --paper:      #f5efe1;
+    --teal:       #234e58;
+    --teal-dark:  #17343b;
+    --gold:       #c9a24b;
+    --gold-soft:  #d8b36a;
+    --rust:       #b5442e;
+    --ink:        #2a2622;
+    --muted:      #6f6a5c;
+    --line:       rgba(42,38,34,0.14);
+
+    /* The companion takes its look from the site. */
+    --sgc-ink: var(--ink);
+    --sgc-muted: var(--muted);
+    --sgc-line: var(--line);
+    --sgc-card: var(--paper);
+    --sgc-bg: var(--cream);
+    --sgc-accent: var(--rust);
+    --sgc-heading-font: 'Helvetica Neue', Arial, sans-serif;
+    --sgc-ui-font: 'Helvetica Neue', Arial, sans-serif;
+    --sgc-radius: 2px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: Georgia, 'Times New Roman', serif; color: var(--ink);
+    background: var(--cream); line-height: 1.7; -webkit-font-smoothing: antialiased;
+  }
+  h1, .nav-brand, .eyebrow { font-family: 'Helvetica Neue', Arial, sans-serif; font-weight: 700; color: var(--teal-dark); }
+  .eyebrow { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.16em; color: var(--rust); margin: 0; }
+  .wrap { width: 100%; max-width: 760px; margin: 0 auto; padding: 0 24px; }
+  header { padding: 26px 0; border-bottom: 1px solid var(--line); background: var(--paper); }
+  .nav-brand { text-decoration: none; font-size: 1.05rem; letter-spacing: 0.08em; text-transform: uppercase; }
+  main { padding: 48px 0 80px; }
+  h1 { font-size: 2rem; margin: 8px 0 4px; }
+  .intro { color: var(--muted); margin: 0 0 24px; }
+  a { color: var(--rust); }
+  .sgc-name { color: var(--teal-dark); }
+  .sgc-entry { box-shadow: 0 10px 24px -22px rgba(23,52,59,0.6); }
+  footer { background: var(--teal-dark); color: var(--cream); padding: 30px 0; text-align: center; font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.85rem; }
+  footer a { color: var(--gold-soft); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <a href="/" class="nav-brand">Jeffrey Potts</a>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <p class="eyebrow">Reader’s Companion</p>
+    <h1>BOOK TITLE</h1>
+    <p class="intro">Who’s who, and where you met them — without spoilers. Choose the chapter you’ve reached and the companion shows nothing beyond it.</p>
+    <div data-sgeulai-companion data-src="companion.json"></div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    &copy; <span id="year"></span> Jeffrey Potts. All rights reserved. &nbsp;·&nbsp; <a href="/">Back to the site</a>
+  </div>
+</footer>
+
+<script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+<script src="../companion.js"></script>
+</body>
+</html>

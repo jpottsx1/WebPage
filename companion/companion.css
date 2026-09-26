@@ -1,0 +1,10 @@
+.sgc { color: var(--sgc-ink, inherit); }
+.sgc-bar { position: sticky; top: var(--sgc-sticky-top, 0); z-index: 5; background: var(--sgc-bg, Canvas); padding: 10px 0; border-bottom: 1px solid var(--sgc-line, rgba(127,127,127,.3)); display: flex; gap: 10px; flex-wrap: wrap; align-items: center; font-family: var(--sgc-ui-font, inherit); font-size: .95rem; }
+.sgc-bar select, .sgc-bar input { font: inherit; padding: 6px 8px; border: 1px solid var(--sgc-line, rgba(127,127,127,.3)); border-radius: var(--sgc-radius, 4px); background: var(--sgc-card, Canvas); color: var(--sgc-ink, inherit); max-width: 100%; }
+.sgc-note { color: var(--sgc-muted, GrayText); font-family: var(--sgc-ui-font, inherit); font-size: .9rem; }
+.sgc-entry { background: var(--sgc-card, transparent); border: 1px solid var(--sgc-line, rgba(127,127,127,.3)); border-radius: var(--sgc-radius, 4px); padding: 14px 16px; margin: 12px 0; scroll-margin-top: 80px; }
+.sgc-kind { font-family: var(--sgc-ui-font, inherit); font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .12em; color: var(--sgc-accent, inherit); }
+.sgc-name { font-family: var(--sgc-heading-font, inherit); font-size: 1.2rem; margin: 2px 0 0; }
+.sgc-meta { font-family: var(--sgc-ui-font, inherit); font-size: .85rem; color: var(--sgc-muted, GrayText); margin-top: 4px; }
+.sgc-blurb { margin: 8px 0 0; }
+.sgc-links a { color: var(--sgc-accent, inherit); }
