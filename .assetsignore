@@ -1,2 +1,5 @@
 companion/_template
 companion/README.md
+src
+SETUP.md
+schema.sql
