@@ -3,7 +3,9 @@
  *
  *   GET       /blog/                    — post list, newest first (live DB query)
  *   GET       /blog/:slug               — single post
+ *   GET       /blog/tag/:slug           — posts with one tag (tags live in tags.js)
  *   GET       /blog/image/:id           — a post's header image
+ *   GET       /blog/media/:file         — an image uploaded from MarsEdit (see xmlrpc.js)
  *   GET       /admin/blog               — password gate + new-post form + post list
  *   POST      /admin/blog/login         — admin login
  *   POST      /admin/blog/new           — create a post
@@ -18,6 +20,7 @@
 import { escapeHtml, slugify, formatDate } from "./util.js";
 import { pageShell } from "./layout.js";
 import { checkPassword, requireSession, loginCookieHeader, loginFormHtml } from "./auth.js";
+import { parseTags, tagsToString, setPostTags, deletePostTags, tagsForPosts } from "./tags.js";
 
 const ADMIN_AREA = "admin-blog";
 
@@ -29,7 +32,7 @@ function redirect(location, extraHeaders = {}) {
   return new Response(null, { status: 303, headers: { Location: location, ...extraHeaders } });
 }
 
-async function uniqueSlug(env, title, excludeId) {
+export async function uniqueSlug(env, title, excludeId) {
   const base = slugify(title);
   let slug = base;
   let n = 2;
@@ -42,7 +45,13 @@ async function uniqueSlug(env, title, excludeId) {
 }
 
 function excerpt(bodyHtml, len = 160) {
-  const text = bodyHtml.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  // Block-level tags become spaces so paragraphs don't run together; inline
+  // tags (<a>, <b>…) vanish so they don't leave a gap before punctuation.
+  const text = bodyHtml
+    .replace(/<\/?(p|br|div|h[1-6]|li|ul|ol|blockquote|figure|figcaption|img|hr|pre|table|tr|td|th)\b[^>]*>/gi, " ")
+    .replace(/<[^>]+>/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
   return text.length > len ? text.slice(0, len).trim() + "…" : text;
 }
 
@@ -50,24 +59,39 @@ function sanitizeImageName(name) {
   return String(name || "image").replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 100);
 }
 
-async function renderPublicList(env) {
-  const { results } = await env.DB.prepare("SELECT slug, title, body_html, created_at FROM posts ORDER BY created_at DESC").all();
-  if (!results.length) {
-    return `<p class="empty">No posts yet — <a href="/#signup">sign up for the newsletter</a> and you'll be the first to know when something new goes up.</p>`;
-  }
-  return `<ul class="post-list">${results
+function tagLinks(tags) {
+  if (!tags || !tags.length) return "";
+  return `<p class="post-tags">${tags
+    .map((t) => `<a href="/blog/tag/${t.slug}">${escapeHtml(t.name)}</a>`)
+    .join("")}</p>`;
+}
+
+async function renderPostList(env, posts) {
+  const tags = await tagsForPosts(env, posts.map((p) => p.id));
+  return `<ul class="post-list">${posts
     .map(
       (p) => `
     <li>
       <a href="/blog/${p.slug}">${escapeHtml(p.title)}</a>
       <span class="post-date">${formatDate(p.created_at)}</span>
       <p class="post-excerpt">${escapeHtml(excerpt(p.body_html))}</p>
+      ${tagLinks(tags.get(p.id))}
     </li>`
     )
     .join("")}</ul>`;
 }
 
-function renderEditForm(post) {
+async function renderPublicList(env) {
+  const { results } = await env.DB.prepare("SELECT id, slug, title, body_html, created_at FROM posts ORDER BY created_at DESC").all();
+  if (!results.length) {
+    return `<p class="empty">No posts yet — <a href="/#signup">sign up for the newsletter</a> and you'll be the first to know when something new goes up.</p>`;
+  }
+  return renderPostList(env, results);
+}
+
+const TAGS_FIELD_HINT = `<span class="field-hint">Separate tags with commas, e.g. <em>writing, research</em>.</span>`;
+
+function renderEditForm(post, tags) {
   return `
     <p class="eyebrow">Admin</p>
     <h1>Edit Post</h1>
@@ -76,6 +100,9 @@ function renderEditForm(post) {
       <input type="text" id="title" name="title" value="${escapeHtml(post.title)}" required />
       <label for="body">Body (HTML)</label>
       <textarea id="body" name="body" required>${escapeHtml(post.body_html)}</textarea>
+      <label for="tags">Tags (optional)</label>
+      <input type="text" id="tags" name="tags" value="${escapeHtml(tagsToString(tags))}" />
+      ${TAGS_FIELD_HINT}
       ${post.image_key ? `<p><img src="/blog/image/${post.id}" alt="" style="max-width:200px;display:block;margin-bottom:10px;" /></p>` : ""}
       <label for="image">Replace image (optional)</label>
       <input type="file" id="image" name="image" accept="image/*" />
@@ -110,6 +137,19 @@ export async function handleBlogRequest(request, env, url) {
       headers: {
         "Content-Type": (obj.httpMetadata && obj.httpMetadata.contentType) || "image/jpeg",
         "Cache-Control": "public, max-age=31536000",
+      },
+    });
+  }
+
+  // ---- image uploaded from MarsEdit ----
+  m = path.match(/^\/blog\/media\/([A-Za-z0-9._-]+)$/);
+  if (m) {
+    const obj = await env.FILES.get(`blog/media/${m[1]}`);
+    if (!obj) return html("Not found", 404);
+    return new Response(obj.body, {
+      headers: {
+        "Content-Type": (obj.httpMetadata && obj.httpMetadata.contentType) || "application/octet-stream",
+        "Cache-Control": "public, max-age=31536000, immutable",
       },
     });
   }
@@ -155,6 +195,8 @@ export async function handleBlogRequest(request, env, url) {
       .prepare("INSERT INTO posts (id, slug, title, body_html, image_key, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)")
       .bind(id, slug, title, body, imageKey, now, now)
       .run();
+    const tags = parseTags(form.get("tags"));
+    if (tags.length) await setPostTags(env, id, tags);
     return redirect("/admin/blog");
   }
 
@@ -165,7 +207,8 @@ export async function handleBlogRequest(request, env, url) {
     if (!authed) return redirect("/admin/blog");
     const post = await env.DB.prepare("SELECT * FROM posts WHERE id = ?").bind(m[1]).first();
     if (!post) return html("Not found", 404);
-    return html(pageShell({ title: `Edit — ${post.title}`, noindex: true, bodyHtml: renderEditForm(post) }));
+    const tags = await tagsForPosts(env, [post.id]);
+    return html(pageShell({ title: `Edit — ${post.title}`, noindex: true, bodyHtml: renderEditForm(post, tags.get(post.id)) }));
   }
 
   if (m && request.method === "POST") {
@@ -189,6 +232,7 @@ export async function handleBlogRequest(request, env, url) {
       .prepare("UPDATE posts SET title = ?, slug = ?, body_html = ?, image_key = ?, updated_at = ? WHERE id = ?")
       .bind(title, slug, body, imageKey, new Date().toISOString(), post.id)
       .run();
+    await setPostTags(env, post.id, parseTags(form.get("tags")));
     return redirect("/admin/blog");
   }
 
@@ -202,6 +246,7 @@ export async function handleBlogRequest(request, env, url) {
     if (post) {
       if (post.image_key) await env.FILES.delete(post.image_key);
       await env.DB.prepare("DELETE FROM posts WHERE id = ?").bind(id).run();
+      await deletePostTags(env, id);
     }
     return redirect("/admin/blog");
   }
@@ -250,6 +295,9 @@ export async function handleBlogRequest(request, env, url) {
         <input type="text" id="title" name="title" required />
         <label for="body">Body (HTML)</label>
         <textarea id="body" name="body" required></textarea>
+        <label for="tags">Tags (optional)</label>
+        <input type="text" id="tags" name="tags" />
+        ${TAGS_FIELD_HINT}
         <label for="image">Image (optional)</label>
         <input type="file" id="image" name="image" accept="image/*" />
         <button type="submit" class="btn btn-primary">Publish</button>
@@ -260,6 +308,24 @@ export async function handleBlogRequest(request, env, url) {
     return html(pageShell({ title: "Admin — Blog", noindex: true, bodyHtml }));
   }
 
+  // ---- posts with one tag ----
+  m = path.match(/^\/blog\/tag\/([a-z0-9-]+)\/?$/);
+  if (m) {
+    const { results } = await env.DB
+      .prepare("SELECT p.id, p.slug, p.title, p.body_html, p.created_at, t.name AS tag_name FROM posts p JOIN post_tags t ON t.post_id = p.id WHERE t.slug = ? ORDER BY p.created_at DESC")
+      .bind(m[1])
+      .all();
+    if (!results.length) return null;
+    const name = results[0].tag_name;
+    return html(
+      pageShell({
+        title: `${name} — Blog — Jeffrey Potts`,
+        bodyHtml: `<p class="eyebrow">Tagged</p><h1>${escapeHtml(name)}</h1>${await renderPostList(env, results)}
+      <p style="margin-top:40px;"><a href="/blog/">&larr; All posts</a></p>`,
+      })
+    );
+  }
+
   // ---- single post ----
   m = path.match(/^\/blog\/([a-z0-9-]+)\/?$/);
   if (m) {
@@ -268,11 +334,13 @@ export async function handleBlogRequest(request, env, url) {
     const imageHtml = post.image_key
       ? `<img src="/blog/image/${post.id}" alt="${escapeHtml(post.title)}" style="width:100%;height:auto;margin:0 0 24px;border:1px solid var(--line);" />`
       : "";
+    const tags = await tagsForPosts(env, [post.id]);
     const bodyHtml = `
       <p class="eyebrow">${formatDate(post.created_at)}</p>
       <h1>${escapeHtml(post.title)}</h1>
       ${imageHtml}
       <div class="post-body">${post.body_html}</div>
+      ${tagLinks(tags.get(post.id))}
       <p style="margin-top:40px;"><a href="/blog/">&larr; Back to all posts</a></p>
     `;
     return html(pageShell({ title: `${post.title} — Jeffrey Potts`, bodyHtml }));

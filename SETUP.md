@@ -187,3 +187,46 @@ if you share the link directly, matching how you'd hand out a password.
 The section labels ("Section 1", "Section 2", "Section 3") are placeholders
 in `src/lib/downloads.js` — tell me what each section is actually for and
 I'll rename them in one edit.
+
+## Posting from MarsEdit
+
+The blog also accepts posts from MarsEdit (or any editor that speaks the
+MetaWeblog API). MarsEdit gets its own username and app password, separate
+from `ADMIN_PASSWORD_BLOG`, so you can change it, or shut MarsEdit out,
+without touching your web admin login. The app password can't unlock
+`/admin/blog`.
+
+**One-time setup:**
+
+1. Cloudflare dashboard → your Worker → **Settings → Variables and
+   Secrets** → add both as **Encrypt (secret)**, then **Save and deploy**:
+
+   | Variable | Value |
+   |---|---|
+   | `BLOG_APP_USER` | The username you'll type into MarsEdit (e.g. `jeff`) |
+   | `BLOG_APP_PASSWORD` | A long random password from your password manager. MarsEdit stores it in your Keychain, so you never need to type it again. |
+
+2. In MarsEdit: **File → New Blog…** → name it, enter
+   `https://jeffreypotts.ca/blog/` → **Continue**. It should find the blog
+   on its own. If it asks, choose **System: MetaWeblog API** and
+   **API Endpoint URL: `https://jeffreypotts.ca/xmlrpc`**.
+3. Enter `BLOG_APP_USER` and `BLOG_APP_PASSWORD` when it asks.
+
+**What works:** publishing, editing and deleting posts; downloading
+existing posts into MarsEdit; images dragged into a post (uploaded to R2
+and served from `/blog/media/`); setting a post's date; and editing the
+slug (the address after `/blog/`). Posts published from MarsEdit and from
+`/admin/blog` are the same posts. You can edit either way.
+
+**Tags:** type them in MarsEdit's Tags field, or the Tags box on
+`/admin/blog`, separated by commas. Each post shows its tags, and each tag
+has a page listing its posts at `/blog/tag/<tag>`. Tags need the
+`post_tags` table from `schema.sql`, which is safe to re-run.
+
+**What doesn't:** categories (the blog has tags instead), and drafts
+saved on the server. Keep drafts as local drafts in MarsEdit; choosing
+"Send to Blog as Draft" gives an error rather than publishing by
+accident.
+
+Images you delete from a post stay in R2. They're small, and nothing
+links to them.

@@ -13,6 +13,8 @@
  *   /downloads/*, /admin/* — password-gated file downloads + blog CMS,
  *     see src/lib/downloads.js and src/lib/blog.js
  *   /blog/* — dynamic blog, see src/lib/blog.js
+ *   POST /xmlrpc, GET /rsd.xml — posting to the blog from MarsEdit,
+ *     see src/lib/xmlrpc.js
  *
  * Required bindings / variables (set in Cloudflare dashboard):
  *   DB              — D1 database binding (declared in wrangler.jsonc)
@@ -25,12 +27,15 @@
  *   ADMIN_PASSWORD_1/2/3    — admin passwords for each section's file manager
  *   ADMIN_PASSWORD_BLOG     — admin password for the blog CMS
  *   SESSION_SECRET          — random string used to sign login-session cookies
+ *   BLOG_APP_USER           — username MarsEdit signs in with
+ *   BLOG_APP_PASSWORD       — MarsEdit's app password (separate from ADMIN_PASSWORD_BLOG)
  *
  * See SETUP.md for the one-time setup steps.
  */
 
 import { handleDownloadsRequest } from "./lib/downloads.js";
 import { handleBlogRequest } from "./lib/blog.js";
+import { handleXmlRpcRequest } from "./lib/xmlrpc.js";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -232,6 +237,8 @@ export default {
     if (url.pathname === "/api/contact" && request.method === "POST") {
       return handleContact(request, env);
     }
+    const xmlRpcResponse = await handleXmlRpcRequest(request, env, url, { blogName: "Jeffrey Potts", bucket: env.FILES });
+    if (xmlRpcResponse) return xmlRpcResponse;
     const downloadsResponse = await handleDownloadsRequest(request, env, url);
     if (downloadsResponse) return downloadsResponse;
     const blogResponse = await handleBlogRequest(request, env, url);

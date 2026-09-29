@@ -66,6 +66,11 @@ const BASE_STYLE = `
   .post-excerpt { margin: 8px 0 0; }
   .post-body p { margin: 0 0 18px; }
   .post-body img { max-width: 100%; }
+  .post-tags { margin: 10px 0 0; display: flex; flex-wrap: wrap; gap: 8px; font-family: 'Helvetica Neue', Arial, sans-serif; }
+  .post-tags a, .post-list .post-tags a { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--teal); text-decoration: none; border: 1px solid var(--line); padding: 3px 10px; background: var(--paper); }
+  .post-tags a:hover, .post-list .post-tags a:hover { color: var(--rust); border-color: var(--rust); }
+  .post-body + .post-tags { margin-top: 32px; }
+  .field-hint { display: block; margin: -10px 0 16px; color: var(--muted); font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.82rem; }
 `;
 
 export function pageShell({ title, bodyHtml, noindex = false }) {
@@ -76,6 +81,7 @@ export function pageShell({ title, bodyHtml, noindex = false }) {
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>${escapeHtml(title)}</title>
 ${noindex ? '<meta name="robots" content="noindex, nofollow" />' : ""}
+<link rel="EditURI" type="application/rsd+xml" title="RSD" href="/rsd.xml" />
 <style>${BASE_STYLE}</style>
 </head>
 <body>
