@@ -43,7 +43,13 @@ export async function uniqueSlug(env, title, excludeId) {
 }
 
 function excerpt(bodyHtml, len = 160) {
-  const text = bodyHtml.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  // Block-level tags become spaces so paragraphs don't run together; inline
+  // tags (<a>, <b>…) vanish so they don't leave a gap before punctuation.
+  const text = bodyHtml
+    .replace(/<\/?(p|br|div|h[1-6]|li|ul|ol|blockquote|figure|figcaption|img|hr|pre|table|tr|td|th)\b[^>]*>/gi, " ")
+    .replace(/<[^>]+>/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
   return text.length > len ? text.slice(0, len).trim() + "…" : text;
 }
 
