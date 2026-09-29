@@ -38,3 +38,15 @@ CREATE TABLE IF NOT EXISTS posts (
 
 CREATE INDEX IF NOT EXISTS idx_posts_created_at
   ON posts (created_at);
+
+-- Blog post tags: one row per post per tag. slug is the URL form
+-- (/blog/tag/<slug>); name is the tag as it was typed.
+CREATE TABLE IF NOT EXISTS post_tags (
+  post_id  TEXT NOT NULL,
+  slug     TEXT NOT NULL,
+  name     TEXT NOT NULL,
+  PRIMARY KEY (post_id, slug)
+);
+
+CREATE INDEX IF NOT EXISTS idx_post_tags_slug
+  ON post_tags (slug);

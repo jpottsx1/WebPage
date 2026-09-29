@@ -218,7 +218,12 @@ and served from `/blog/media/`); setting a post's date; and editing the
 slug (the address after `/blog/`). Posts published from MarsEdit and from
 `/admin/blog` are the same posts. You can edit either way.
 
-**What doesn't:** categories and tags (the blog has none), and drafts
+**Tags:** type them in MarsEdit's Tags field, or the Tags box on
+`/admin/blog`, separated by commas. Each post shows its tags, and each tag
+has a page listing its posts at `/blog/tag/<tag>`. Tags need the
+`post_tags` table from `schema.sql`, which is safe to re-run.
+
+**What doesn't:** categories (the blog has tags instead), and drafts
 saved on the server. Keep drafts as local drafts in MarsEdit; choosing
 "Send to Blog as Draft" gives an error rather than publishing by
 accident.

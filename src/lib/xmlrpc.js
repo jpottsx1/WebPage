@@ -16,7 +16,10 @@
  * into a post are uploaded through metaWeblog.newMediaObject to R2 under
  * blog/media/ and served from /blog/media/:file (see blog.js).
  *
- * Not supported: categories/tags (always empty), and drafts kept on the
+ * Tags come and go through MarsEdit's Tags field (mt_keywords, a
+ * comma-separated string) and are stored by tags.js.
+ *
+ * Not supported: categories (always empty), and drafts kept on the
  * server — publish=false is refused, since the posts table has no
  * unpublished state. Drafts stay local in MarsEdit until published.
  *
@@ -26,6 +29,7 @@
 
 import { checkPassword } from "./auth.js";
 import { uniqueSlug } from "./blog.js";
+import { parseTags, tagsToString, setPostTags, deletePostTags, tagsForPosts } from "./tags.js";
 
 const BLOG_ID = "1";
 const MAX_MEDIA_BYTES = 25 * 1024 * 1024;
@@ -229,7 +233,7 @@ function postDate(content) {
   return d instanceof Date && !isNaN(d) ? d : null;
 }
 
-function postStruct(post, ctx) {
+function postStruct(post, ctx, tags) {
   const link = `${ctx.origin}/blog/${post.slug}`;
   return {
     postid: post.id,
@@ -244,7 +248,7 @@ function postStruct(post, ctx) {
     userid: "1",
     post_status: "publish",
     categories: [],
-    mt_keywords: "",
+    mt_keywords: tagsToString(tags),
     mt_excerpt: "",
     mt_text_more: "",
     mt_allow_comments: 0,
@@ -295,12 +299,15 @@ const METHODS = {
     await authenticate(ctx, user, pass);
     const limit = Math.min(Math.max(parseInt(count, 10) || 20, 1), 500);
     const { results } = await ctx.env.DB.prepare("SELECT * FROM posts ORDER BY created_at DESC LIMIT ?").bind(limit).all();
-    return results.map((p) => postStruct(p, ctx));
+    const tags = await tagsForPosts(ctx.env, results.map((p) => p.id));
+    return results.map((p) => postStruct(p, ctx, tags.get(p.id)));
   },
 
   async "metaWeblog.getPost"([postId, user, pass], ctx) {
     await authenticate(ctx, user, pass);
-    return postStruct(await loadPost(ctx, postId), ctx);
+    const post = await loadPost(ctx, postId);
+    const tags = await tagsForPosts(ctx.env, [post.id]);
+    return postStruct(post, ctx, tags.get(post.id));
   },
 
   async "metaWeblog.newPost"([, user, pass, content, publish], ctx) {
@@ -320,6 +327,8 @@ const METHODS = {
       .prepare("INSERT INTO posts (id, slug, title, body_html, image_key, created_at, updated_at) VALUES (?, ?, ?, ?, NULL, ?, ?)")
       .bind(id, slug, title, body, created, now)
       .run();
+    const tags = parseTags(content.mt_keywords);
+    if (tags.length) await setPostTags(ctx.env, id, tags);
     return id;
   },
 
@@ -347,6 +356,10 @@ const METHODS = {
       .prepare("UPDATE posts SET title = ?, slug = ?, body_html = ?, created_at = ?, updated_at = ? WHERE id = ?")
       .bind(title, slug, body, created, new Date().toISOString(), post.id)
       .run();
+    // Only touch tags when MarsEdit sent the field; an empty string clears them.
+    if (Object.prototype.hasOwnProperty.call(content, "mt_keywords")) {
+      await setPostTags(ctx.env, post.id, parseTags(content.mt_keywords));
+    }
     return true;
   },
 
@@ -355,6 +368,7 @@ const METHODS = {
     const post = await loadPost(ctx, postId);
     if (post.image_key) await ctx.bucket.delete(post.image_key);
     await ctx.env.DB.prepare("DELETE FROM posts WHERE id = ?").bind(post.id).run();
+    await deletePostTags(ctx.env, post.id);
     return true;
   },
 
@@ -379,7 +393,8 @@ const METHODS = {
     return { url, file: fileName, type };
   },
 
-  // No categories or tags — answer the questions MarsEdit asks with "none".
+  // No categories — answer the questions MarsEdit asks with "none". (Tags
+  // travel in mt_keywords instead.)
   async "metaWeblog.getCategories"([, user, pass], ctx) {
     await authenticate(ctx, user, pass);
     return [];
