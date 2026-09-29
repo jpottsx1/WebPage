@@ -76,6 +76,7 @@ export function pageShell({ title, bodyHtml, noindex = false }) {
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>${escapeHtml(title)}</title>
 ${noindex ? '<meta name="robots" content="noindex, nofollow" />' : ""}
+<link rel="EditURI" type="application/rsd+xml" title="RSD" href="/rsd.xml" />
 <style>${BASE_STYLE}</style>
 </head>
 <body>

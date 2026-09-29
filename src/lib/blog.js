@@ -4,6 +4,7 @@
  *   GET       /blog/                    — post list, newest first (live DB query)
  *   GET       /blog/:slug               — single post
  *   GET       /blog/image/:id           — a post's header image
+ *   GET       /blog/media/:file         — an image uploaded from MarsEdit (see xmlrpc.js)
  *   GET       /admin/blog               — password gate + new-post form + post list
  *   POST      /admin/blog/login         — admin login
  *   POST      /admin/blog/new           — create a post
@@ -29,7 +30,7 @@ function redirect(location, extraHeaders = {}) {
   return new Response(null, { status: 303, headers: { Location: location, ...extraHeaders } });
 }
 
-async function uniqueSlug(env, title, excludeId) {
+export async function uniqueSlug(env, title, excludeId) {
   const base = slugify(title);
   let slug = base;
   let n = 2;
@@ -110,6 +111,19 @@ export async function handleBlogRequest(request, env, url) {
       headers: {
         "Content-Type": (obj.httpMetadata && obj.httpMetadata.contentType) || "image/jpeg",
         "Cache-Control": "public, max-age=31536000",
+      },
+    });
+  }
+
+  // ---- image uploaded from MarsEdit ----
+  m = path.match(/^\/blog\/media\/([A-Za-z0-9._-]+)$/);
+  if (m) {
+    const obj = await env.FILES.get(`blog/media/${m[1]}`);
+    if (!obj) return html("Not found", 404);
+    return new Response(obj.body, {
+      headers: {
+        "Content-Type": (obj.httpMetadata && obj.httpMetadata.contentType) || "application/octet-stream",
+        "Cache-Control": "public, max-age=31536000, immutable",
       },
     });
   }
