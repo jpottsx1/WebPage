@@ -44,7 +44,7 @@ export async function uniqueSlug(env, title, excludeId) {
   }
 }
 
-function excerpt(bodyHtml, len = 160) {
+export function excerpt(bodyHtml, len = 160) {
   // Block-level tags become spaces so paragraphs don't run together; inline
   // tags (<a>, <b>…) vanish so they don't leave a gap before punctuation.
   const text = bodyHtml
@@ -121,6 +121,8 @@ export async function handleBlogRequest(request, env, url) {
     return html(
       pageShell({
         title: "Blog — Jeffrey Potts",
+        description: "Notes from the desk of author Jeffrey Potts: writing, food, family and getting back up.",
+        canonical: "/blog/",
         bodyHtml: `<p class="eyebrow">The Blog</p><h1>Notes from the desk</h1>${list}`,
       })
     );
@@ -320,6 +322,8 @@ export async function handleBlogRequest(request, env, url) {
     return html(
       pageShell({
         title: `${name} — Blog — Jeffrey Potts`,
+        description: `Blog posts by Jeffrey Potts tagged ${name}.`,
+        canonical: `/blog/tag/${m[1]}`,
         bodyHtml: `<p class="eyebrow">Tagged</p><h1>${escapeHtml(name)}</h1>${await renderPostList(env, results)}
       <p style="margin-top:40px;"><a href="/blog/">&larr; All posts</a></p>`,
       })
@@ -343,7 +347,30 @@ export async function handleBlogRequest(request, env, url) {
       ${tagLinks(tags.get(post.id))}
       <p style="margin-top:40px;"><a href="/blog/">&larr; Back to all posts</a></p>
     `;
-    return html(pageShell({ title: `${post.title} — Jeffrey Potts`, bodyHtml }));
+    const desc = excerpt(post.body_html, 160);
+    const canonical = `/blog/${post.slug}`;
+    const image = post.image_key ? `/blog/image/${post.id}` : "/Jeffreypotts.jpg";
+    return html(
+      pageShell({
+        title: `${post.title} — Jeffrey Potts`,
+        description: desc,
+        canonical,
+        image,
+        ogType: "article",
+        bodyHtml,
+        jsonLd: {
+          "@context": "https://schema.org",
+          "@type": "BlogPosting",
+          headline: post.title,
+          description: desc,
+          datePublished: post.created_at,
+          dateModified: post.updated_at || post.created_at,
+          image: "https://jeffreypotts.ca" + image,
+          mainEntityOfPage: "https://jeffreypotts.ca" + canonical,
+          author: { "@type": "Person", name: "Jeffrey Potts", url: "https://jeffreypotts.ca/" },
+        },
+      })
+    );
   }
 
   return null;

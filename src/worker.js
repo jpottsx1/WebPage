@@ -13,6 +13,7 @@
  *   /downloads/*, /admin/* — password-gated file downloads + blog CMS,
  *     see src/lib/downloads.js and src/lib/blog.js
  *   /blog/* — dynamic blog, see src/lib/blog.js
+ *   /robots.txt, /sitemap.xml, /blog/feed.xml — see src/lib/seo.js
  *   POST /xmlrpc, GET /rsd.xml — posting to the blog from MarsEdit,
  *     see src/lib/xmlrpc.js
  *
@@ -35,6 +36,7 @@
 
 import { handleDownloadsRequest } from "./lib/downloads.js";
 import { handleBlogRequest } from "./lib/blog.js";
+import { handleSeoRequest } from "./lib/seo.js";
 import { handleXmlRpcRequest } from "./lib/xmlrpc.js";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -237,6 +239,8 @@ export default {
     if (url.pathname === "/api/contact" && request.method === "POST") {
       return handleContact(request, env);
     }
+    const seoResponse = await handleSeoRequest(request, env, url);
+    if (seoResponse) return seoResponse;
     const xmlRpcResponse = await handleXmlRpcRequest(request, env, url, { blogName: "Jeffrey Potts", bucket: env.FILES });
     if (xmlRpcResponse) return xmlRpcResponse;
     const downloadsResponse = await handleDownloadsRequest(request, env, url);
