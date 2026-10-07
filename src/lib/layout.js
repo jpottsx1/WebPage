@@ -73,7 +73,24 @@ const BASE_STYLE = `
   .field-hint { display: block; margin: -10px 0 16px; color: var(--muted); font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.82rem; }
 `;
 
-export function pageShell({ title, bodyHtml, noindex = false }) {
+export function pageShell({ title, bodyHtml, noindex = false, description = "", canonical = "", image = "", ogType = "website", jsonLd = null }) {
+  const SITE = "https://jeffreypotts.ca";
+  const abs = (u) => (u.startsWith("http") ? u : SITE + u);
+  const seo = [];
+  if (description) seo.push(`<meta name="description" content="${escapeHtml(description)}" />`);
+  if (canonical) seo.push(`<link rel="canonical" href="${escapeHtml(abs(canonical))}" />`);
+  if (!noindex) {
+    seo.push(`<meta property="og:site_name" content="Jeffrey Potts" />`);
+    seo.push(`<meta property="og:type" content="${ogType}" />`);
+    seo.push(`<meta property="og:title" content="${escapeHtml(title)}" />`);
+    if (description) seo.push(`<meta property="og:description" content="${escapeHtml(description)}" />`);
+    if (canonical) seo.push(`<meta property="og:url" content="${escapeHtml(abs(canonical))}" />`);
+    if (image) seo.push(`<meta property="og:image" content="${escapeHtml(abs(image))}" />`);
+    seo.push(`<meta name="twitter:card" content="${image ? "summary_large_image" : "summary"}" />`);
+    seo.push(`<link rel="alternate" type="application/rss+xml" title="Jeffrey Potts — Blog" href="/blog/feed.xml" />`);
+  }
+  if (jsonLd) seo.push(`<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, "\\u003c")}</script>`);
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -82,6 +99,7 @@ export function pageShell({ title, bodyHtml, noindex = false }) {
 <title>${escapeHtml(title)}</title>
 ${noindex ? '<meta name="robots" content="noindex, nofollow" />' : ""}
 <link rel="EditURI" type="application/rsd+xml" title="RSD" href="/rsd.xml" />
+${seo.join("\n")}
 <style>${BASE_STYLE}</style>
 </head>
 <body>
