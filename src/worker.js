@@ -35,6 +35,9 @@
  *   BLOG_APP_USER           — username MarsEdit signs in with
  *   BLOG_APP_PASSWORD       — MarsEdit's app password (separate from ADMIN_PASSWORD_BLOG)
  *   MAILING_ADDRESS         — optional, mailing address printed in email footers (CASL)
+ *   TURNSTILE_SECRET        — secret, Turnstile widget secret (see src/lib/turnstile.js)
+ *   TURNSTILE_HOSTNAMES     — hostnames tokens may come from (wrangler.jsonc vars;
+ *                             .dev.vars sets localhost for local testing)
  *
  * See SETUP.md for the one-time setup steps.
  */
@@ -47,6 +50,7 @@ import { handleNewsletterRequest, unsubscribeUrl, unsubscribeHeaders, emailFoote
 import { notFoundPage } from "./lib/layout.js";
 import { withSecurityHeaders } from "./lib/headers.js";
 import { formLimited, FORM_LIMITED_MESSAGE } from "./lib/ratelimit.js";
+import { verifyTurnstile, TURNSTILE_FAILED_MESSAGE } from "./lib/turnstile.js";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -67,6 +71,10 @@ async function handleSubscribe(request, env) {
     payload = await request.json();
   } catch (e) {
     return json(400, { error: "Invalid request body." });
+  }
+
+  if (!(await verifyTurnstile(env, request, payload["cf-turnstile-response"], "subscribe"))) {
+    return json(403, { error: TURNSTILE_FAILED_MESSAGE });
   }
 
   const name = (payload.name || "").toString().trim();
@@ -157,6 +165,10 @@ async function handleContact(request, env) {
   // ---- honeypot: bots fill hidden fields; pretend success without sending ----
   if ((payload.website || "").toString().trim()) {
     return json(201, { ok: true });
+  }
+
+  if (!(await verifyTurnstile(env, request, payload["cf-turnstile-response"], "contact"))) {
+    return json(403, { error: TURNSTILE_FAILED_MESSAGE });
   }
 
   const name = (payload.name || "").toString().trim();

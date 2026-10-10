@@ -10,6 +10,16 @@
     "directory": ".",
     "binding": "ASSETS"
   },
+  // Plain settings live here, not in the dashboard: a deploy removes
+  // dashboard variables that aren't listed in this file. Secrets are
+  // unaffected. .dev.vars overrides these for local testing.
+  "vars": {
+    "FROM_EMAIL": "Jeffrey Potts <me@jeffreypotts.ca>",
+    "NOTIFY_EMAIL": "Jeffrey Potts <me@jeffreypotts.ca>",
+    "MAILING_ADDRESS": "PO Box 7750, Picton, Ontario",
+    // Hostnames Turnstile tokens may come from
+    "TURNSTILE_HOSTNAMES": "jeffreypotts.ca,www.jeffreypotts.ca"
+  },
   "compatibility_flags": [
     "nodejs_compat"
   ],
