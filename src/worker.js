@@ -10,6 +10,8 @@
  *   POST /api/contact — contact form
  *     1. Validates name + email + message (honeypot field rejects bots)
  *     2. Emails the message to the author via Resend, reply-to the sender
+ *   GET/POST /api/unsubscribe, /admin/newsletter — unsubscribe links and the
+ *     subscriber list / newsletter sender, see src/lib/newsletter.js
  *   /downloads/*, /admin/* — password-gated file downloads + blog CMS,
  *     see src/lib/downloads.js and src/lib/blog.js
  *   /blog/* — dynamic blog, see src/lib/blog.js
@@ -30,6 +32,7 @@
  *   SESSION_SECRET          — random string used to sign login-session cookies
  *   BLOG_APP_USER           — username MarsEdit signs in with
  *   BLOG_APP_PASSWORD       — MarsEdit's app password (separate from ADMIN_PASSWORD_BLOG)
+ *   MAILING_ADDRESS         — optional, mailing address printed in email footers (CASL)
  *
  * See SETUP.md for the one-time setup steps.
  */
@@ -38,6 +41,7 @@ import { handleDownloadsRequest } from "./lib/downloads.js";
 import { handleBlogRequest } from "./lib/blog.js";
 import { handleSeoRequest } from "./lib/seo.js";
 import { handleXmlRpcRequest } from "./lib/xmlrpc.js";
+import { handleNewsletterRequest, unsubscribeUrl, unsubscribeHeaders, emailFooterHtml } from "./lib/newsletter.js";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -103,10 +107,12 @@ async function handleSubscribe(request, env) {
   const firstName = name.split(/\s+/)[0] || "friend";
   if (env.RESEND_API_KEY && env.FROM_EMAIL) {
     try {
+      const unsubUrl = await unsubscribeUrl(env, email);
       await sendEmail(env, {
         to: email,
-        subject: "Welcome — your first early chapter is coming",
-        html: welcomeHtml(firstName),
+        subject: "Welcome to the list",
+        html: welcomeHtml(env, firstName, unsubUrl),
+        headers: unsubscribeHeaders(unsubUrl),
       });
     } catch (e) {
       // Subscriber is already saved; don't fail the request over email delivery.
@@ -173,7 +179,7 @@ async function handleContact(request, env) {
 }
 
 // ---- Resend email helper ----
-async function sendEmail(env, { to, subject, html, replyTo }) {
+async function sendEmail(env, { to, subject, html, replyTo, headers }) {
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -186,6 +192,7 @@ async function sendEmail(env, { to, subject, html, replyTo }) {
       subject,
       html,
       ...(replyTo ? { reply_to: replyTo } : {}),
+      ...(headers ? { headers } : {}),
     }),
   });
   if (!res.ok) {
@@ -194,18 +201,15 @@ async function sendEmail(env, { to, subject, html, replyTo }) {
   return res;
 }
 
-function welcomeHtml(firstName) {
+function welcomeHtml(env, firstName, unsubUrl) {
   return `
   <div style="font-family: Georgia, 'Times New Roman', serif; color:#2a2622; max-width:560px; margin:0 auto; line-height:1.6;">
     <h1 style="font-family:Arial,Helvetica,sans-serif; color:#234e58; font-size:22px;">Welcome aboard, ${escapeHtml(firstName)}.</h1>
     <p>Thank you for signing up — you&rsquo;re officially on the list.</p>
     <p>You&rsquo;ll be among the first to read new chapters and writing samples, hear about launches, and get the occasional story from behind the pages. No spam, no filler — just the work, a little early.</p>
-    <p>Your first early chapter is on its way shortly. In the meantime, thank you for reading.</p>
+    <p>Early chapters will arrive with the newsletter as they&rsquo;re ready. In the meantime, thank you for reading.</p>
     <p style="margin-top:28px;">— Jeffrey Potts</p>
-    <hr style="border:none; border-top:1px solid #e3d6b8; margin:28px 0;">
-    <p style="font-family:Arial,Helvetica,sans-serif; font-size:12px; color:#6f6a5c;">
-      You received this because you signed up at jeffreypotts.ca. If this wasn&rsquo;t you, simply ignore this email.
-    </p>
+    ${emailFooterHtml(env, unsubUrl)}
   </div>`;
 }
 
@@ -239,6 +243,8 @@ export default {
     if (url.pathname === "/api/contact" && request.method === "POST") {
       return handleContact(request, env);
     }
+    const newsletterResponse = await handleNewsletterRequest(request, env, url);
+    if (newsletterResponse) return newsletterResponse;
     const seoResponse = await handleSeoRequest(request, env, url);
     if (seoResponse) return seoResponse;
     const xmlRpcResponse = await handleXmlRpcRequest(request, env, url, { blogName: "Jeffrey Potts", bucket: env.FILES });

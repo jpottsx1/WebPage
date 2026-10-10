@@ -50,3 +50,15 @@ CREATE TABLE IF NOT EXISTS post_tags (
 
 CREATE INDEX IF NOT EXISTS idx_post_tags_slug
   ON post_tags (slug);
+
+-- Newsletters sent from /admin/newsletter (history + double-send guard).
+CREATE TABLE IF NOT EXISTS newsletters (
+  id              TEXT PRIMARY KEY,
+  subject         TEXT NOT NULL,
+  body_html       TEXT NOT NULL,
+  sent_at         TEXT NOT NULL,
+  recipient_count INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_newsletters_sent_at
+  ON newsletters (sent_at);

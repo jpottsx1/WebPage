@@ -131,26 +131,32 @@ admin passwords to yourself.
 
 ---
 
-## Where's my list? / Exporting to Excel
+## Your subscribers and sending the newsletter
 
-Your subscribers live in the D1 database. To see or export them:
+Go to **/admin/newsletter** and sign in with the blog admin password
+(`ADMIN_PASSWORD_BLOG`). There's also a link from `/admin/blog`. From there you can:
 
-- **Cloudflare dashboard → D1 → jeffreypotts-newsletter → Console**, run:
+- **See and remove subscribers.** Removing someone deletes them straight away.
+- **Export to Excel:** *Export subscribers (CSV)* downloads the list.
+- **Send a newsletter:** write a subject and an HTML body (`{{name}}` becomes
+  each reader's first name). Use **Send me a test** first; it goes to
+  `NOTIFY_EMAIL`. **Send to N subscribers** emails everyone. Each email gets
+  its own unsubscribe link, and mail apps show their built-in Unsubscribe
+  button. The same subject can't be sent twice within an hour, so a
+  double-click won't send it twice.
 
-  ```sql
-  SELECT name, email, created_at FROM subscribers ORDER BY created_at DESC;
-  ```
+One-time setup:
 
-- To download as CSV for Excel (needs the free `wrangler` CLI once,
-  `npm install -g wrangler` then `wrangler login`):
+1. Re-run `schema.sql` (step 6). It adds the `newsletters` table, and
+   re-running it is safe.
+2. Add a **`MAILING_ADDRESS`** variable (Text), for example
+   `PO Box 123, Halifax NS B3H 0A1`. It's printed in the footer of every
+   email; Canada's anti-spam law (CASL) expects a mailing address in
+   commercial email. A PO box is fine.
 
-  ```bash
-  wrangler d1 execute jeffreypotts-newsletter --remote \
-    --command "SELECT name, email, created_at FROM subscribers ORDER BY created_at DESC" \
-    --json > subscribers.json
-  ```
-
-  (Ask me anytime and I can turn that into a one-click CSV export page.)
+Unsubscribe links are signed with `SESSION_SECRET`. If you ever change that
+secret, links in emails you've already sent stop working. People can still
+use the contact form, and you can remove them by hand.
 
 ## Notes
 
