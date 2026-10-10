@@ -28,6 +28,7 @@
  */
 
 import { checkPassword } from "./auth.js";
+import { authLocked, recordAuthFailure, AUTH_LOCKED_MESSAGE } from "./ratelimit.js";
 import { uniqueSlug } from "./blog.js";
 import { parseTags, tagsToString, setPostTags, deletePostTags, tagsForPosts } from "./tags.js";
 
@@ -206,11 +207,15 @@ async function authenticate(ctx, username, password) {
   if (!env.BLOG_APP_USER || !env.BLOG_APP_PASSWORD) {
     throw new Fault(403, "Posting from MarsEdit isn't set up yet: add the BLOG_APP_USER and BLOG_APP_PASSWORD secrets.");
   }
+  if (await authLocked(env, ctx.request)) throw new Fault(429, AUTH_LOCKED_MESSAGE);
   const [userOk, passOk] = await Promise.all([
     checkPassword(String(username ?? ""), env.BLOG_APP_USER),
     checkPassword(String(password ?? ""), env.BLOG_APP_PASSWORD),
   ]);
-  if (!userOk || !passOk) throw new Fault(403, "Incorrect username or password.");
+  if (!userOk || !passOk) {
+    await recordAuthFailure(env, ctx.request);
+    throw new Fault(403, "Incorrect username or password.");
+  }
 }
 
 function str(v) {
@@ -438,7 +443,7 @@ function rsdXml(ctx) {
  * `bucket` is the R2 bucket that holds blog images.
  */
 export async function handleXmlRpcRequest(request, env, url, { blogName, bucket }) {
-  const ctx = { env, bucket, blogName, origin: url.origin };
+  const ctx = { env, request, bucket, blogName, origin: url.origin };
 
   if (url.pathname === "/rsd.xml" && (request.method === "GET" || request.method === "HEAD")) {
     return new Response(request.method === "HEAD" ? null : rsdXml(ctx), {

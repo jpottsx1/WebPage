@@ -62,3 +62,16 @@ CREATE TABLE IF NOT EXISTS newsletters (
 
 CREATE INDEX IF NOT EXISTS idx_newsletters_sent_at
   ON newsletters (sent_at);
+
+-- Rate limiting (src/lib/ratelimit.js): one row per wrong password or form
+-- submission, keyed like "auth:<ip>". Rows older than a day are deleted.
+CREATE TABLE IF NOT EXISTS rate_events (
+  key TEXT NOT NULL,
+  at  INTEGER NOT NULL           -- milliseconds since 1970
+);
+
+CREATE INDEX IF NOT EXISTS idx_rate_events_key_at
+  ON rate_events (key, at);
+
+CREATE INDEX IF NOT EXISTS idx_rate_events_at
+  ON rate_events (at);

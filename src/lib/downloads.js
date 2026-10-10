@@ -17,6 +17,7 @@
 import { escapeHtml, sanitizeFilename, formatDate, formatBytes } from "./util.js";
 import { pageShell } from "./layout.js";
 import { checkPassword, requireSession, loginCookieHeader, loginFormHtml } from "./auth.js";
+import { authLocked, recordAuthFailure, AUTH_LOCKED_MESSAGE } from "./ratelimit.js";
 
 const SECTIONS = [
   { slug: "section-1", label: "Section 1", downloadEnv: "DOWNLOAD_PASSWORD_1", adminEnv: "ADMIN_PASSWORD_1" },
@@ -79,15 +80,17 @@ export async function handleDownloadsRequest(request, env, url) {
     if (request.method === "POST") {
       const form = await request.formData();
       const password = (form.get("password") || "").toString();
-      const ok = await checkPassword(password, env[section.downloadEnv]);
+      const locked = await authLocked(env, request);
+      const ok = !locked && (await checkPassword(password, env[section.downloadEnv]));
       if (!ok) {
+        if (!locked) await recordAuthFailure(env, request);
         return html(
           pageShell({
             title: `${section.label} — Jeffrey Potts`,
             noindex: true,
-            bodyHtml: loginFormHtml({ heading: section.label, action: `/downloads/${section.slug}`, error: "Incorrect password." }),
+            bodyHtml: loginFormHtml({ heading: section.label, action: `/downloads/${section.slug}`, error: locked ? AUTH_LOCKED_MESSAGE : "Incorrect password." }),
           }),
-          401
+          locked ? 429 : 401
         );
       }
       const cookie = await loginCookieHeader(`download-${section.slug}`, env.SESSION_SECRET);
@@ -136,15 +139,17 @@ export async function handleDownloadsRequest(request, env, url) {
     if (!section) return null;
     const form = await request.formData();
     const password = (form.get("password") || "").toString();
-    const ok = await checkPassword(password, env[section.adminEnv]);
+    const locked = await authLocked(env, request);
+    const ok = !locked && (await checkPassword(password, env[section.adminEnv]));
     if (!ok) {
+      if (!locked) await recordAuthFailure(env, request);
       return html(
         pageShell({
           title: `Admin — ${section.label}`,
           noindex: true,
-          bodyHtml: loginFormHtml({ heading: `Admin — ${section.label}`, action: `/admin/${section.slug}/login`, error: "Incorrect password." }),
+          bodyHtml: loginFormHtml({ heading: `Admin — ${section.label}`, action: `/admin/${section.slug}/login`, error: locked ? AUTH_LOCKED_MESSAGE : "Incorrect password." }),
         }),
-        401
+        locked ? 429 : 401
       );
     }
     const cookie = await loginCookieHeader(`admin-${section.slug}`, env.SESSION_SECRET);

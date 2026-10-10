@@ -20,6 +20,7 @@
 import { escapeHtml, slugify, formatDate } from "./util.js";
 import { pageShell } from "./layout.js";
 import { checkPassword, requireSession, loginCookieHeader, loginFormHtml } from "./auth.js";
+import { authLocked, recordAuthFailure, AUTH_LOCKED_MESSAGE } from "./ratelimit.js";
 import { parseTags, tagsToString, setPostTags, deletePostTags, tagsForPosts } from "./tags.js";
 
 const ADMIN_AREA = "admin-blog";
@@ -161,15 +162,17 @@ export async function handleBlogRequest(request, env, url) {
     const form = await request.formData();
     const password = (form.get("password") || "").toString();
     const next = (form.get("next") || "").toString();
-    const ok = await checkPassword(password, env.ADMIN_PASSWORD_BLOG);
+    const locked = await authLocked(env, request);
+    const ok = !locked && (await checkPassword(password, env.ADMIN_PASSWORD_BLOG));
     if (!ok) {
+      if (!locked) await recordAuthFailure(env, request);
       return html(
         pageShell({
           title: "Admin — Blog",
           noindex: true,
-          bodyHtml: loginFormHtml({ heading: "Admin — Blog", action: "/admin/blog/login", error: "Incorrect password.", next }),
+          bodyHtml: loginFormHtml({ heading: "Admin — Blog", action: "/admin/blog/login", error: locked ? AUTH_LOCKED_MESSAGE : "Incorrect password.", next }),
         }),
-        401
+        locked ? 429 : 401
       );
     }
     const cookie = await loginCookieHeader(ADMIN_AREA, env.SESSION_SECRET);

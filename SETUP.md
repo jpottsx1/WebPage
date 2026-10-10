@@ -236,3 +236,18 @@ accident.
 
 Images you delete from a post stay in R2. They're small, and nothing
 links to them.
+
+## Rate limiting
+
+Wrong passwords are counted per IP address in the `rate_events` table.
+After 10 wrong passwords in 15 minutes, that address is refused — even with
+the right password — until the 15 minutes pass. The count covers every
+password on the site, including MarsEdit. If you lock yourself out, wait it
+out, or clear it in the D1 console:
+
+```sql
+DELETE FROM rate_events WHERE key LIKE 'auth:%';
+```
+
+The public forms allow 5 submissions per IP address per 10 minutes. The
+table needs `schema.sql` to have been run; until then nothing is limited.
