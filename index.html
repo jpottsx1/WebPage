@@ -243,6 +243,7 @@
   .signup-form textarea { resize: vertical; min-height: 110px; }
   .signup-form input:focus, .signup-form textarea:focus { outline: 2px solid var(--gold); border-color: var(--gold); }
   .signup-form .btn { width: 100%; border: none; }
+  .turnstile-slot { min-height: 65px; margin: 4px 0 14px; }
   .hp-field { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
   .form-note { font-size: 0.8rem; color: var(--muted); margin: 14px 0 0; text-align: center; font-family:'Helvetica Neue',Arial,sans-serif; }
   .form-msg { display: none; margin-top: 16px; padding: 14px 16px; border-radius: 2px; font-family:'Helvetica Neue',Arial,sans-serif; font-size: 0.92rem; }
@@ -476,6 +477,7 @@
         <label for="email">Email address</label>
         <input type="email" id="email" name="email" placeholder="jane@example.com" autocomplete="email" required />
 
+        <div class="turnstile-slot" id="signupTurnstile"></div>
         <button type="submit" class="btn btn-primary">Send Me Early Chapters</button>
         <p class="form-note">Free. Unsubscribe anytime.</p>
         <div class="form-msg" id="formMsg" role="status" aria-live="polite"></div>
@@ -509,6 +511,7 @@
           <input type="text" id="cwebsite" name="website" tabindex="-1" autocomplete="off" />
         </div>
 
+        <div class="turnstile-slot" id="contactTurnstile"></div>
         <button type="submit" class="btn btn-primary">Send Message</button>
         <div class="form-msg" id="contactMsg" role="status" aria-live="polite"></div>
       </form>
@@ -535,6 +538,30 @@
    email via Resend. One-time setup: see SETUP.md.
    ============================================================ */
 
+  // ---- TURNSTILE ---------------------------------------------
+  // One widget per form, rendered explicitly so each can be reset
+  // after a submission: a token only works once. The server checks
+  // it (src/lib/turnstile.js) before doing anything else.
+  var TURNSTILE_SITEKEY = '0x4AAAAAAFTX-6k4xMYiEYy3';
+  var turnstileIds = {};
+
+  window.onTurnstileLoad = function () {
+    turnstileIds.subscribe = window.turnstile.render('#signupTurnstile', { sitekey: TURNSTILE_SITEKEY, action: 'subscribe' });
+    turnstileIds.contact = window.turnstile.render('#contactTurnstile', { sitekey: TURNSTILE_SITEKEY, action: 'contact' });
+  };
+
+  function turnstileToken(action) {
+    return (window.turnstile && turnstileIds[action] !== undefined)
+      ? window.turnstile.getResponse(turnstileIds[action]) || ''
+      : '';
+  }
+
+  function turnstileReset(action) {
+    if (window.turnstile && turnstileIds[action] !== undefined) window.turnstile.reset(turnstileIds[action]);
+  }
+
+  var NOT_VERIFIED = 'Please complete the “Verify you are human” check above the button, then try again.';
+
   var form = document.getElementById('signupForm');
   var msg  = document.getElementById('formMsg');
 
@@ -552,6 +579,13 @@
       return;
     }
 
+    var token = turnstileToken('subscribe');
+    if (!token) {
+      msg.className = 'form-msg err';
+      msg.textContent = NOT_VERIFIED;
+      return;
+    }
+
     var first = name.split(/\s+/)[0] || 'friend';
     var btn = form.querySelector('button[type=submit]');
     btn.disabled = true; btn.textContent = 'Sending…';
@@ -559,7 +593,7 @@
     fetch('/api/subscribe', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body: JSON.stringify({ name: name, email: email })
+      body: JSON.stringify({ name: name, email: email, 'cf-turnstile-response': token })
     }).then(function (r) {
       return r.json().catch(function () { return {}; }).then(function (data) {
         return { status: r.status, data: data };
@@ -568,19 +602,23 @@
       if (res.status === 200 || res.status === 201) {
         msg.className = 'form-msg ok';
         msg.textContent = 'Welcome aboard, ' + first + ' — you’re on the list! ' +
-          'Check your inbox for a welcome note and your first early chapter. Thanks for reading. — Jeffrey';
+          'Check your inbox for a welcome note. Thanks for reading. — Jeffrey';
         form.reset();
       } else if (res.status === 409) {
         msg.className = 'form-msg err';
         msg.textContent = 'Looks like ' + email + ' is already on the list — you’re all set. Thanks!';
       } else {
-        throw new Error((res.data && res.data.error) || 'request failed');
+        var err = new Error('request failed');
+        // 403 (bot check) and 429 (too many tries) carry a message worth showing.
+        if ((res.status === 403 || res.status === 429) && res.data && res.data.error) err.userMessage = res.data.error;
+        throw err;
       }
-    }).catch(function () {
+    }).catch(function (err) {
       msg.className = 'form-msg err';
-      msg.textContent = 'Something went wrong sending that. Please try again in a moment.';
+      msg.textContent = (err && err.userMessage) || 'Something went wrong sending that. Please try again in a moment.';
     }).then(function () {
       btn.disabled = false; btn.textContent = 'Send Me Early Chapters';
+      turnstileReset('subscribe');
     });
   });
 
@@ -607,13 +645,20 @@
       return;
     }
 
+    var cToken = turnstileToken('contact');
+    if (!cToken) {
+      cMsg.className = 'form-msg err';
+      cMsg.textContent = NOT_VERIFIED;
+      return;
+    }
+
     var cBtn = cForm.querySelector('button[type=submit]');
     cBtn.disabled = true; cBtn.textContent = 'Sending…';
 
     fetch('/api/contact', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body: JSON.stringify({ name: name, email: email, message: message, website: website })
+      body: JSON.stringify({ name: name, email: email, message: message, website: website, 'cf-turnstile-response': cToken })
     }).then(function (r) {
       return r.json().catch(function () { return {}; }).then(function (data) {
         return { status: r.status, data: data };
@@ -624,13 +669,17 @@
         cMsg.textContent = 'Thanks, ' + name.split(/\s+/)[0] + ' — your message is on its way. Jeffrey will get back to you soon.';
         cForm.reset();
       } else {
-        throw new Error((res.data && res.data.error) || 'request failed');
+        var err = new Error('request failed');
+        // 403 (bot check) and 429 (too many tries) carry a message worth showing.
+        if ((res.status === 403 || res.status === 429) && res.data && res.data.error) err.userMessage = res.data.error;
+        throw err;
       }
-    }).catch(function () {
+    }).catch(function (err) {
       cMsg.className = 'form-msg err';
-      cMsg.textContent = 'Something went wrong sending that. Please try again in a moment.';
+      cMsg.textContent = (err && err.userMessage) || 'Something went wrong sending that. Please try again in a moment.';
     }).then(function () {
       cBtn.disabled = false; cBtn.textContent = 'Send Message';
+      turnstileReset('contact');
     });
   });
 
@@ -687,5 +736,6 @@
 
   document.getElementById('year').textContent = new Date().getFullYear();
 </script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileLoad&render=explicit" async defer></script>
 </body>
 </html>

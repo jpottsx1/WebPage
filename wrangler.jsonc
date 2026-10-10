@@ -10,6 +10,11 @@
     "directory": ".",
     "binding": "ASSETS"
   },
+  // Hostnames Turnstile tokens may come from. Not secret. .dev.vars
+  // overrides this with localhost for local testing.
+  "vars": {
+    "TURNSTILE_HOSTNAMES": "jeffreypotts.ca,www.jeffreypotts.ca"
+  },
   "compatibility_flags": [
     "nodejs_compat"
   ],
