@@ -46,6 +46,7 @@ import { handleXmlRpcRequest } from "./lib/xmlrpc.js";
 import { handleNewsletterRequest, unsubscribeUrl, unsubscribeHeaders, emailFooterHtml } from "./lib/newsletter.js";
 import { notFoundPage } from "./lib/layout.js";
 import { withSecurityHeaders } from "./lib/headers.js";
+import { formLimited, FORM_LIMITED_MESSAGE } from "./lib/ratelimit.js";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -57,6 +58,10 @@ function json(status, body) {
 }
 
 async function handleSubscribe(request, env) {
+  if (await formLimited(env, request, "subscribe")) {
+    return json(429, { error: FORM_LIMITED_MESSAGE });
+  }
+
   let payload;
   try {
     payload = await request.json();
@@ -138,6 +143,10 @@ async function handleSubscribe(request, env) {
 }
 
 async function handleContact(request, env) {
+  if (await formLimited(env, request, "contact")) {
+    return json(429, { error: FORM_LIMITED_MESSAGE });
+  }
+
   let payload;
   try {
     payload = await request.json();
