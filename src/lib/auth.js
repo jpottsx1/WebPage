@@ -112,7 +112,7 @@ export async function checkPassword(submitted, expected) {
   return timingSafeEqualHex(a, b);
 }
 
-export function loginFormHtml({ heading, action, error }) {
+export function loginFormHtml({ heading, action, error, next }) {
   return `
     <p class="eyebrow">Protected Area</p>
     <h1>${escapeHtml(heading)}</h1>
@@ -120,6 +120,7 @@ export function loginFormHtml({ heading, action, error }) {
     <form method="POST" action="${action}" class="login-form">
       <label for="password">Password</label>
       <input type="password" id="password" name="password" autocomplete="current-password" required autofocus />
+      ${next ? `<input type="hidden" name="next" value="${escapeHtml(next)}" />` : ""}
       <button type="submit" class="btn btn-primary">Unlock</button>
     </form>
   `;

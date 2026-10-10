@@ -160,19 +160,22 @@ export async function handleBlogRequest(request, env, url) {
   if (path === "/admin/blog/login" && request.method === "POST") {
     const form = await request.formData();
     const password = (form.get("password") || "").toString();
+    const next = (form.get("next") || "").toString();
     const ok = await checkPassword(password, env.ADMIN_PASSWORD_BLOG);
     if (!ok) {
       return html(
         pageShell({
           title: "Admin — Blog",
           noindex: true,
-          bodyHtml: loginFormHtml({ heading: "Admin — Blog", action: "/admin/blog/login", error: "Incorrect password." }),
+          bodyHtml: loginFormHtml({ heading: "Admin — Blog", action: "/admin/blog/login", error: "Incorrect password.", next }),
         }),
         401
       );
     }
     const cookie = await loginCookieHeader(ADMIN_AREA, env.SESSION_SECRET);
-    return redirect("/admin/blog", { "Set-Cookie": cookie });
+    // Only same-site admin paths, so the login can't be used as an open redirect.
+    const target = next === "/admin/newsletter" ? next : "/admin/blog";
+    return redirect(target, { "Set-Cookie": cookie });
   }
 
   // ---- admin: create ----
@@ -291,6 +294,7 @@ export async function handleBlogRequest(request, env, url) {
     const bodyHtml = `
       <p class="eyebrow">Admin</p>
       <h1>Blog Posts</h1>
+      <p><a href="/admin/newsletter">Newsletter &amp; subscribers</a></p>
       <h2>New Post</h2>
       <form method="POST" action="/admin/blog/new" enctype="multipart/form-data" class="admin-form">
         <label for="title">Title</label>
