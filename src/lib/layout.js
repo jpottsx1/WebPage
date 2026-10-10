@@ -111,3 +111,23 @@ ${seo.join("\n")}
 </body>
 </html>`;
 }
+
+export function notFoundPage() {
+  return new Response(
+    pageShell({
+      title: "Page not found — Jeffrey Potts",
+      noindex: true,
+      bodyHtml: `
+    <p class="eyebrow">404</p>
+    <h1>That page isn&rsquo;t here.</h1>
+    <p>It may have moved, or the link may have a typo. Try one of these instead:</p>
+    <ul>
+      <li><a href="/">Home</a></li>
+      <li><a href="/#books">The books</a></li>
+      <li><a href="/blog/">The blog</a></li>
+      <li><a href="/#contact">Get in touch</a></li>
+    </ul>`,
+    }),
+    { status: 404, headers: { "Content-Type": "text/html; charset=utf-8" } }
+  );
+}

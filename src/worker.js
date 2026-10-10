@@ -18,6 +18,8 @@
  *   /robots.txt, /sitemap.xml, /blog/feed.xml — see src/lib/seo.js
  *   POST /xmlrpc, GET /rsd.xml — posting to the blog from MarsEdit,
  *     see src/lib/xmlrpc.js
+ *   Anything else is a static file, or the 404 page from src/lib/layout.js.
+ *   Every response gets the security headers from src/lib/headers.js.
  *
  * Required bindings / variables (set in Cloudflare dashboard):
  *   DB              — D1 database binding (declared in wrangler.jsonc)
@@ -42,6 +44,8 @@ import { handleBlogRequest } from "./lib/blog.js";
 import { handleSeoRequest } from "./lib/seo.js";
 import { handleXmlRpcRequest } from "./lib/xmlrpc.js";
 import { handleNewsletterRequest, unsubscribeUrl, unsubscribeHeaders, emailFooterHtml } from "./lib/newsletter.js";
+import { notFoundPage } from "./lib/layout.js";
+import { withSecurityHeaders } from "./lib/headers.js";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -236,23 +240,28 @@ function escapeHtml(s) {
 
 export default {
   async fetch(request, env, ctx) {
-    const url = new URL(request.url);
-    if (url.pathname === "/api/subscribe" && request.method === "POST") {
-      return handleSubscribe(request, env);
-    }
-    if (url.pathname === "/api/contact" && request.method === "POST") {
-      return handleContact(request, env);
-    }
-    const newsletterResponse = await handleNewsletterRequest(request, env, url);
-    if (newsletterResponse) return newsletterResponse;
-    const seoResponse = await handleSeoRequest(request, env, url);
-    if (seoResponse) return seoResponse;
-    const xmlRpcResponse = await handleXmlRpcRequest(request, env, url, { blogName: "Jeffrey Potts", bucket: env.FILES });
-    if (xmlRpcResponse) return xmlRpcResponse;
-    const downloadsResponse = await handleDownloadsRequest(request, env, url);
-    if (downloadsResponse) return downloadsResponse;
-    const blogResponse = await handleBlogRequest(request, env, url);
-    if (blogResponse) return blogResponse;
-    return env.ASSETS.fetch(request);
+    return withSecurityHeaders(await route(request, env));
   },
 };
+
+async function route(request, env) {
+  const url = new URL(request.url);
+  if (url.pathname === "/api/subscribe" && request.method === "POST") {
+    return handleSubscribe(request, env);
+  }
+  if (url.pathname === "/api/contact" && request.method === "POST") {
+    return handleContact(request, env);
+  }
+  const newsletterResponse = await handleNewsletterRequest(request, env, url);
+  if (newsletterResponse) return newsletterResponse;
+  const seoResponse = await handleSeoRequest(request, env, url);
+  if (seoResponse) return seoResponse;
+  const xmlRpcResponse = await handleXmlRpcRequest(request, env, url, { blogName: "Jeffrey Potts", bucket: env.FILES });
+  if (xmlRpcResponse) return xmlRpcResponse;
+  const downloadsResponse = await handleDownloadsRequest(request, env, url);
+  if (downloadsResponse) return downloadsResponse;
+  const blogResponse = await handleBlogRequest(request, env, url);
+  if (blogResponse) return blogResponse;
+  const asset = await env.ASSETS.fetch(request);
+  return asset.status === 404 ? notFoundPage() : asset;
+}

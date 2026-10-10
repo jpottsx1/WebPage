@@ -58,9 +58,9 @@ export async function handleDownloadsRequest(request, env, url) {
       .prepare("SELECT * FROM download_files WHERE id = ? AND section = ?")
       .bind(m[2], section.slug)
       .first();
-    if (!row) return html("Not found", 404);
+    if (!row) return null;
     const obj = await env.FILES.get(row.r2_key);
-    if (!obj) return html("File missing", 404);
+    if (!obj) return null;
     return new Response(obj.body, {
       headers: {
         "Content-Type": (obj.httpMetadata && obj.httpMetadata.contentType) || "application/octet-stream",
