@@ -132,9 +132,9 @@ export async function handleBlogRequest(request, env, url) {
   let m = path.match(/^\/blog\/image\/([a-f0-9-]+)$/);
   if (m) {
     const post = await env.DB.prepare("SELECT image_key FROM posts WHERE id = ?").bind(m[1]).first();
-    if (!post || !post.image_key) return html("Not found", 404);
+    if (!post || !post.image_key) return null;
     const obj = await env.FILES.get(post.image_key);
-    if (!obj) return html("Not found", 404);
+    if (!obj) return null;
     return new Response(obj.body, {
       headers: {
         "Content-Type": (obj.httpMetadata && obj.httpMetadata.contentType) || "image/jpeg",
@@ -147,7 +147,7 @@ export async function handleBlogRequest(request, env, url) {
   m = path.match(/^\/blog\/media\/([A-Za-z0-9._-]+)$/);
   if (m) {
     const obj = await env.FILES.get(`blog/media/${m[1]}`);
-    if (!obj) return html("Not found", 404);
+    if (!obj) return null;
     return new Response(obj.body, {
       headers: {
         "Content-Type": (obj.httpMetadata && obj.httpMetadata.contentType) || "application/octet-stream",
@@ -211,7 +211,7 @@ export async function handleBlogRequest(request, env, url) {
     const authed = await requireSession(request, ADMIN_AREA, env.SESSION_SECRET);
     if (!authed) return redirect("/admin/blog");
     const post = await env.DB.prepare("SELECT * FROM posts WHERE id = ?").bind(m[1]).first();
-    if (!post) return html("Not found", 404);
+    if (!post) return null;
     const tags = await tagsForPosts(env, [post.id]);
     return html(pageShell({ title: `Edit — ${post.title}`, noindex: true, bodyHtml: renderEditForm(post, tags.get(post.id)) }));
   }
@@ -220,7 +220,7 @@ export async function handleBlogRequest(request, env, url) {
     const authed = await requireSession(request, ADMIN_AREA, env.SESSION_SECRET);
     if (!authed) return redirect("/admin/blog");
     const post = await env.DB.prepare("SELECT * FROM posts WHERE id = ?").bind(m[1]).first();
-    if (!post) return html("Not found", 404);
+    if (!post) return null;
 
     const form = await request.formData();
     const title = (form.get("title") || "").toString().trim() || post.title;
