@@ -23,7 +23,8 @@ import { checkPassword, requireSession, loginCookieHeader, loginFormHtml } from 
 import { authLocked, recordAuthFailure, AUTH_LOCKED_MESSAGE } from "./ratelimit.js";
 import { TURNSTILE_SITEKEY } from "./turnstile.js";
 import { getImageAlt, setImageAlt, deleteImageAlt } from "./imagealt.js";
-import { readingTime, adjacentPosts, postNavHtml, shareHtml } from "./postextras.js";
+import { readingTime, adjacentPosts, postNavHtml, shareHtml, firstImage } from "./postextras.js";
+import { nowIso, publishedSql, draftIdSet, isDraft, setDraft, postState, resolveStatus } from "./publishing.js";
 import { parseTags, tagsToString, setPostTags, deletePostTags, tagsForPosts } from "./tags.js";
 
 const ADMIN_AREA = "admin-blog";
@@ -150,7 +151,10 @@ async function renderPostList(env, posts) {
 }
 
 async function renderPublicList(env) {
-  const { results } = await env.DB.prepare("SELECT id, slug, title, body_html, created_at FROM posts ORDER BY created_at DESC").all();
+  const { results } = await env.DB
+    .prepare(`SELECT id, slug, title, body_html, created_at FROM posts WHERE ${publishedSql()} ORDER BY created_at DESC`)
+    .bind(nowIso())
+    .all();
   if (!results.length) {
     return `<p class="empty">No posts yet — <a href="/#signup">sign up for the newsletter</a> and you'll be the first to know when something new goes up.</p>`;
   }
@@ -159,7 +163,46 @@ async function renderPublicList(env) {
 
 const TAGS_FIELD_HINT = `<span class="field-hint">Separate tags with commas, e.g. <em>writing, research</em>.</span>`;
 
-function renderEditForm(post, tags, imageAlt) {
+// Published / Draft / Scheduled, for the new-post and edit forms. The
+// browser converts the chosen local time to UTC (publish_at) on submit.
+function statusFieldHtml(state = "publish", createdAt = "") {
+  const checked = (v) => (state === v ? " checked" : "");
+  return `
+      <fieldset class="status-field" data-iso="${state === "schedule" ? escapeHtml(createdAt) : ""}">
+        <legend>Status</legend>
+        <label class="radio"><input type="radio" name="status" value="publish"${checked("publish")} /> Published</label>
+        <label class="radio"><input type="radio" name="status" value="draft"${checked("draft")} /> Draft &mdash; only you can see it</label>
+        <label class="radio"><input type="radio" name="status" value="schedule"${checked("schedule")} /> Scheduled for
+          <input type="datetime-local" name="publish_local" aria-label="Publish date and time" /></label>
+        <input type="hidden" name="publish_at" />
+      </fieldset>`;
+}
+
+const STATUS_FIELD_SCRIPT = `
+    <script>
+    (function () {
+      function pad(n) { return (n < 10 ? "0" : "") + n; }
+      document.querySelectorAll(".status-field").forEach(function (box) {
+        var local = box.querySelector("[name=publish_local]");
+        var hidden = box.querySelector("[name=publish_at]");
+        if (box.dataset.iso) {
+          var d = new Date(box.dataset.iso);
+          local.value = d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + "T" + pad(d.getHours()) + ":" + pad(d.getMinutes());
+        }
+        local.addEventListener("focus", function () { box.querySelector("[value=schedule]").checked = true; });
+        box.closest("form").addEventListener("submit", function (e) {
+          if (!box.querySelector("[value=schedule]").checked) return;
+          if (!local.value) { e.preventDefault(); alert("Choose a date and time to publish, or pick Published or Draft."); return; }
+          hidden.value = new Date(local.value).toISOString();
+        });
+      });
+      document.querySelectorAll("time.local").forEach(function (t) {
+        t.textContent = new Date(t.getAttribute("datetime")).toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
+      });
+    })();
+    </script>`;
+
+function renderEditForm(post, tags, imageAlt, state) {
   return `
     <p class="eyebrow">Admin</p>
     <h1>Edit Post</h1>
@@ -177,10 +220,62 @@ function renderEditForm(post, tags, imageAlt) {
       <label for="image_alt">Image description (alt text, optional)</label>
       <input type="text" id="image_alt" name="image_alt" maxlength="300" value="${escapeHtml(imageAlt || "")}" />
       <span class="field-hint">Describe the image for people who can\u2019t see it. Leave blank if it\u2019s only decoration.</span>
-      <button type="submit" class="btn btn-primary">Save Changes</button>
+      ${statusFieldHtml(state === "scheduled" ? "schedule" : state === "draft" ? "draft" : "publish", post.created_at)}
+      <button type="submit" class="btn btn-primary">Save</button>
     </form>
-    <p><a href="/admin/blog">&larr; Back to all posts</a></p>
+    <p>${state === "published" ? `<a href="/blog/${post.slug}">View the post</a>` : `<a href="/admin/blog/${post.id}/preview">Preview</a>`} &middot; <a href="/admin/blog">&larr; Back to all posts</a></p>
+    ${STATUS_FIELD_SCRIPT}
   `;
+}
+
+async function renderPostPage(env, post, { preview = false } = {}) {
+  const imageHtml = post.image_key
+    ? `<img src="/blog/image/${post.id}" alt="${escapeHtml(await getImageAlt(env, post.id))}" style="width:100%;height:auto;margin:0 0 24px;border:1px solid var(--line);" />`
+    : "";
+  const tags = await tagsForPosts(env, [post.id]);
+  const adjacent = await adjacentPosts(env, post);
+  const banner = preview
+    ? `<p class="notice-msg">Preview &mdash; ${(await isDraft(env, post.id)) ? "this draft isn&rsquo;t published" : `scheduled for <time class="local" datetime="${escapeHtml(post.created_at)}">${formatDate(post.created_at)}</time>`}. Only you can see this page. <a href="/admin/blog/${post.id}/edit">Edit</a></p>${STATUS_FIELD_SCRIPT}`
+    : "";
+  const bodyHtml = `
+    ${banner}
+    <p class="eyebrow">${formatDate(post.created_at)} &middot; ${readingTime(post.body_html)}</p>
+    <h1>${escapeHtml(post.title)}</h1>
+    ${imageHtml}
+    <div class="post-body">${post.body_html}</div>
+    ${tagLinks(tags.get(post.id))}
+    ${shareHtml(`https://jeffreypotts.ca/blog/${post.slug}`, post.title)}
+    ${subscribeBoxHtml()}
+    ${postNavHtml(adjacent)}
+    <p style="margin-top:40px;"><a href="/blog/">&larr; Back to all posts</a></p>
+  `;
+  const desc = excerpt(post.body_html, 160);
+  const canonical = `/blog/${post.slug}`;
+  // Social preview: the header image, else the first image in the post, else the portrait.
+  const image = post.image_key ? `/blog/image/${post.id}` : firstImage(post.body_html) || "/Jeffreypotts.jpg";
+  return html(
+    pageShell({
+      title: `${preview ? "Preview: " : ""}${post.title} — Jeffrey Potts`,
+      noindex: preview,
+      signOut: preview ? "/admin/blog" : "",
+      description: desc,
+      canonical,
+      image,
+      ogType: "article",
+      bodyHtml,
+      jsonLd: {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        headline: post.title,
+        description: desc,
+        datePublished: post.created_at,
+        dateModified: post.updated_at || post.created_at,
+        image: image.startsWith("https://") ? image : "https://jeffreypotts.ca" + image,
+        mainEntityOfPage: "https://jeffreypotts.ca" + canonical,
+        author: { "@type": "Person", name: "Jeffrey Potts", url: "https://jeffreypotts.ca/" },
+      },
+    })
+  );
 }
 
 export async function handleBlogRequest(request, env, url) {
@@ -269,10 +364,12 @@ export async function handleBlogRequest(request, env, url) {
       await env.FILES.put(imageKey, image.stream(), { httpMetadata: { contentType: image.type || "application/octet-stream" } });
     }
     const now = new Date().toISOString();
+    const status = resolveStatus({ status: form.get("status"), publishAt: form.get("publish_at"), current: null });
     await env.DB
       .prepare("INSERT INTO posts (id, slug, title, body_html, image_key, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)")
-      .bind(id, slug, title, body, imageKey, now, now)
+      .bind(id, slug, title, body, imageKey, status.createdAt, now)
       .run();
+    await setDraft(env, id, status.draft);
     const tags = parseTags(form.get("tags"));
     if (tags.length) await setPostTags(env, id, tags);
     if (imageKey) await setImageAlt(env, id, form.get("image_alt"));
@@ -287,7 +384,8 @@ export async function handleBlogRequest(request, env, url) {
     const post = await env.DB.prepare("SELECT * FROM posts WHERE id = ?").bind(m[1]).first();
     if (!post) return null;
     const tags = await tagsForPosts(env, [post.id]);
-    return html(pageShell({ title: `Edit — ${post.title}`, noindex: true, signOut: "/admin/blog", bodyHtml: renderEditForm(post, tags.get(post.id), await getImageAlt(env, post.id)) }));
+    const state = postState(post, await isDraft(env, post.id));
+    return html(pageShell({ title: `Edit — ${post.title}`, noindex: true, signOut: "/admin/blog", bodyHtml: renderEditForm(post, tags.get(post.id), await getImageAlt(env, post.id), state) }));
   }
 
   if (m && request.method === "POST") {
@@ -307,10 +405,14 @@ export async function handleBlogRequest(request, env, url) {
       await env.FILES.put(imageKey, image.stream(), { httpMetadata: { contentType: image.type || "application/octet-stream" } });
     }
     const slug = title !== post.title ? await uniqueSlug(env, title, post.id) : post.slug;
+    const status = form.has("status")
+      ? resolveStatus({ status: form.get("status"), publishAt: form.get("publish_at"), current: post, currentDraft: await isDraft(env, post.id) })
+      : null;
     await env.DB
-      .prepare("UPDATE posts SET title = ?, slug = ?, body_html = ?, image_key = ?, updated_at = ? WHERE id = ?")
-      .bind(title, slug, body, imageKey, new Date().toISOString(), post.id)
+      .prepare("UPDATE posts SET title = ?, slug = ?, body_html = ?, image_key = ?, created_at = ?, updated_at = ? WHERE id = ?")
+      .bind(title, slug, body, imageKey, status ? status.createdAt : post.created_at, new Date().toISOString(), post.id)
       .run();
+    if (status) await setDraft(env, post.id, status.draft);
     await setPostTags(env, post.id, parseTags(form.get("tags")));
     await setImageAlt(env, post.id, imageKey ? form.get("image_alt") : "");
     return redirect("/admin/blog");
@@ -328,6 +430,7 @@ export async function handleBlogRequest(request, env, url) {
       await env.DB.prepare("DELETE FROM posts WHERE id = ?").bind(id).run();
       await deletePostTags(env, id);
       await deleteImageAlt(env, id);
+      await setDraft(env, id, false);
     }
     return redirect("/admin/blog");
   }
@@ -346,6 +449,14 @@ export async function handleBlogRequest(request, env, url) {
     }
 
     const { results } = await env.DB.prepare("SELECT id, slug, title, created_at FROM posts ORDER BY created_at DESC").all();
+    const drafts = await draftIdSet(env, results.map((p) => p.id));
+    const stateLine = (p) => {
+      const state = postState(p, drafts.has(p.id));
+      if (state === "draft") return `<strong>Draft</strong> &middot; <a href="/admin/blog/${p.id}/preview">preview</a>`;
+      if (state === "scheduled")
+        return `<strong>Scheduled</strong> for <time class="local" datetime="${escapeHtml(p.created_at)}">${formatDate(p.created_at)}</time> &middot; <a href="/admin/blog/${p.id}/preview">preview</a>`;
+      return `${formatDate(p.created_at)} &middot; <a href="/blog/${p.slug}">view</a>`;
+    };
     const rows = results.length
       ? `<ul class="post-admin-list">${results
           .map(
@@ -353,7 +464,7 @@ export async function handleBlogRequest(request, env, url) {
         <li>
           <div>
             <strong>${escapeHtml(p.title)}</strong>
-            <div class="meta">${formatDate(p.created_at)} &middot; <a href="/blog/${p.slug}">view</a></div>
+            <div class="meta">${stateLine(p)}</div>
           </div>
           <div class="row-actions">
             <a href="/admin/blog/${p.id}/edit" class="btn btn-ghost">Edit</a>
@@ -385,10 +496,12 @@ export async function handleBlogRequest(request, env, url) {
         <label for="image_alt">Image description (alt text, optional)</label>
         <input type="text" id="image_alt" name="image_alt" maxlength="300" />
         <span class="field-hint">Describe the image for people who can\u2019t see it. Leave blank if it\u2019s only decoration.</span>
-        <button type="submit" class="btn btn-primary">Publish</button>
+        ${statusFieldHtml("publish")}
+        <button type="submit" class="btn btn-primary">Save</button>
       </form>
       <h2>Existing Posts</h2>
       ${rows}
+      ${STATUS_FIELD_SCRIPT}
     `;
     return html(pageShell({ title: "Admin — Blog", noindex: true, signOut: "/admin/blog", bodyHtml }));
   }
@@ -397,8 +510,8 @@ export async function handleBlogRequest(request, env, url) {
   m = path.match(/^\/blog\/tag\/([a-z0-9-]+)\/?$/);
   if (m) {
     const { results } = await env.DB
-      .prepare("SELECT p.id, p.slug, p.title, p.body_html, p.created_at, t.name AS tag_name FROM posts p JOIN post_tags t ON t.post_id = p.id WHERE t.slug = ? ORDER BY p.created_at DESC")
-      .bind(m[1])
+      .prepare(`SELECT p.id, p.slug, p.title, p.body_html, p.created_at, t.name AS tag_name FROM posts p JOIN post_tags t ON t.post_id = p.id WHERE t.slug = ? AND ${publishedSql("p")} ORDER BY p.created_at DESC`)
+      .bind(m[1], nowIso())
       .all();
     if (!results.length) return null;
     const name = results[0].tag_name;
@@ -413,51 +526,25 @@ export async function handleBlogRequest(request, env, url) {
     );
   }
 
-  // ---- single post ----
+  // ---- admin: preview a draft or scheduled post ----
+  m = path.match(/^\/admin\/blog\/([a-f0-9-]+)\/preview$/);
+  if (m && request.method === "GET") {
+    const authed = await requireSession(request, ADMIN_AREA, env.SESSION_SECRET);
+    if (!authed) return redirect("/admin/blog");
+    const post = await env.DB.prepare("SELECT * FROM posts WHERE id = ?").bind(m[1]).first();
+    if (!post) return null;
+    return renderPostPage(env, post, { preview: true });
+  }
+
+  // ---- single post (published only) ----
   m = path.match(/^\/blog\/([a-z0-9-]+)\/?$/);
   if (m) {
-    const post = await env.DB.prepare("SELECT * FROM posts WHERE slug = ?").bind(m[1]).first();
+    const post = await env.DB
+      .prepare(`SELECT * FROM posts WHERE slug = ? AND ${publishedSql()}`)
+      .bind(m[1], nowIso())
+      .first();
     if (!post) return null;
-    const imageHtml = post.image_key
-      ? `<img src="/blog/image/${post.id}" alt="${escapeHtml(await getImageAlt(env, post.id))}" style="width:100%;height:auto;margin:0 0 24px;border:1px solid var(--line);" />`
-      : "";
-    const tags = await tagsForPosts(env, [post.id]);
-    const adjacent = await adjacentPosts(env, post);
-    const bodyHtml = `
-      <p class="eyebrow">${formatDate(post.created_at)} &middot; ${readingTime(post.body_html)}</p>
-      <h1>${escapeHtml(post.title)}</h1>
-      ${imageHtml}
-      <div class="post-body">${post.body_html}</div>
-      ${tagLinks(tags.get(post.id))}
-      ${shareHtml(`https://jeffreypotts.ca/blog/${post.slug}`, post.title)}
-      ${subscribeBoxHtml()}
-      ${postNavHtml(adjacent)}
-      <p style="margin-top:40px;"><a href="/blog/">&larr; Back to all posts</a></p>
-    `;
-    const desc = excerpt(post.body_html, 160);
-    const canonical = `/blog/${post.slug}`;
-    const image = post.image_key ? `/blog/image/${post.id}` : "/Jeffreypotts.jpg";
-    return html(
-      pageShell({
-        title: `${post.title} — Jeffrey Potts`,
-        description: desc,
-        canonical,
-        image,
-        ogType: "article",
-        bodyHtml,
-        jsonLd: {
-          "@context": "https://schema.org",
-          "@type": "BlogPosting",
-          headline: post.title,
-          description: desc,
-          datePublished: post.created_at,
-          dateModified: post.updated_at || post.created_at,
-          image: "https://jeffreypotts.ca" + image,
-          mainEntityOfPage: "https://jeffreypotts.ca" + canonical,
-          author: { "@type": "Person", name: "Jeffrey Potts", url: "https://jeffreypotts.ca/" },
-        },
-      })
-    );
+    return renderPostPage(env, post);
   }
 
   return null;
