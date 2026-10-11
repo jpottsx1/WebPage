@@ -75,3 +75,10 @@ CREATE INDEX IF NOT EXISTS idx_rate_events_key_at
 
 CREATE INDEX IF NOT EXISTS idx_rate_events_at
   ON rate_events (at);
+
+-- Alt text for blog header images (src/lib/imagealt.js). A separate table
+-- rather than a new posts column, so this file stays safe to re-run.
+CREATE TABLE IF NOT EXISTS post_image_alt (
+  post_id TEXT PRIMARY KEY,
+  alt     TEXT NOT NULL
+);

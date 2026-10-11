@@ -22,6 +22,7 @@ import { pageShell } from "./layout.js";
 import { checkPassword, requireSession, loginCookieHeader, loginFormHtml } from "./auth.js";
 import { authLocked, recordAuthFailure, AUTH_LOCKED_MESSAGE } from "./ratelimit.js";
 import { TURNSTILE_SITEKEY } from "./turnstile.js";
+import { getImageAlt, setImageAlt, deleteImageAlt } from "./imagealt.js";
 import { parseTags, tagsToString, setPostTags, deletePostTags, tagsForPosts } from "./tags.js";
 
 const ADMIN_AREA = "admin-blog";
@@ -157,7 +158,7 @@ async function renderPublicList(env) {
 
 const TAGS_FIELD_HINT = `<span class="field-hint">Separate tags with commas, e.g. <em>writing, research</em>.</span>`;
 
-function renderEditForm(post, tags) {
+function renderEditForm(post, tags, imageAlt) {
   return `
     <p class="eyebrow">Admin</p>
     <h1>Edit Post</h1>
@@ -172,6 +173,9 @@ function renderEditForm(post, tags) {
       ${post.image_key ? `<p><img src="/blog/image/${post.id}" alt="" style="max-width:200px;display:block;margin-bottom:10px;" /></p>` : ""}
       <label for="image">Replace image (optional)</label>
       <input type="file" id="image" name="image" accept="image/*" />
+      <label for="image_alt">Image description (alt text, optional)</label>
+      <input type="text" id="image_alt" name="image_alt" maxlength="300" value="${escapeHtml(imageAlt || "")}" />
+      <span class="field-hint">Describe the image for people who can\u2019t see it. Leave blank if it\u2019s only decoration.</span>
       <button type="submit" class="btn btn-primary">Save Changes</button>
     </form>
     <p><a href="/admin/blog">&larr; Back to all posts</a></p>
@@ -270,6 +274,7 @@ export async function handleBlogRequest(request, env, url) {
       .run();
     const tags = parseTags(form.get("tags"));
     if (tags.length) await setPostTags(env, id, tags);
+    if (imageKey) await setImageAlt(env, id, form.get("image_alt"));
     return redirect("/admin/blog");
   }
 
@@ -281,7 +286,7 @@ export async function handleBlogRequest(request, env, url) {
     const post = await env.DB.prepare("SELECT * FROM posts WHERE id = ?").bind(m[1]).first();
     if (!post) return null;
     const tags = await tagsForPosts(env, [post.id]);
-    return html(pageShell({ title: `Edit — ${post.title}`, noindex: true, bodyHtml: renderEditForm(post, tags.get(post.id)) }));
+    return html(pageShell({ title: `Edit — ${post.title}`, noindex: true, bodyHtml: renderEditForm(post, tags.get(post.id), await getImageAlt(env, post.id)) }));
   }
 
   if (m && request.method === "POST") {
@@ -306,6 +311,7 @@ export async function handleBlogRequest(request, env, url) {
       .bind(title, slug, body, imageKey, new Date().toISOString(), post.id)
       .run();
     await setPostTags(env, post.id, parseTags(form.get("tags")));
+    await setImageAlt(env, post.id, imageKey ? form.get("image_alt") : "");
     return redirect("/admin/blog");
   }
 
@@ -320,6 +326,7 @@ export async function handleBlogRequest(request, env, url) {
       if (post.image_key) await env.FILES.delete(post.image_key);
       await env.DB.prepare("DELETE FROM posts WHERE id = ?").bind(id).run();
       await deletePostTags(env, id);
+      await deleteImageAlt(env, id);
     }
     return redirect("/admin/blog");
   }
@@ -374,6 +381,9 @@ export async function handleBlogRequest(request, env, url) {
         ${TAGS_FIELD_HINT}
         <label for="image">Image (optional)</label>
         <input type="file" id="image" name="image" accept="image/*" />
+        <label for="image_alt">Image description (alt text, optional)</label>
+        <input type="text" id="image_alt" name="image_alt" maxlength="300" />
+        <span class="field-hint">Describe the image for people who can\u2019t see it. Leave blank if it\u2019s only decoration.</span>
         <button type="submit" class="btn btn-primary">Publish</button>
       </form>
       <h2>Existing Posts</h2>
@@ -408,7 +418,7 @@ export async function handleBlogRequest(request, env, url) {
     const post = await env.DB.prepare("SELECT * FROM posts WHERE slug = ?").bind(m[1]).first();
     if (!post) return null;
     const imageHtml = post.image_key
-      ? `<img src="/blog/image/${post.id}" alt="${escapeHtml(post.title)}" style="width:100%;height:auto;margin:0 0 24px;border:1px solid var(--line);" />`
+      ? `<img src="/blog/image/${post.id}" alt="${escapeHtml(await getImageAlt(env, post.id))}" style="width:100%;height:auto;margin:0 0 24px;border:1px solid var(--line);" />`
       : "";
     const tags = await tagsForPosts(env, [post.id]);
     const bodyHtml = `
