@@ -89,3 +89,9 @@ CREATE TABLE IF NOT EXISTS post_image_alt (
 CREATE TABLE IF NOT EXISTS post_drafts (
   post_id TEXT PRIMARY KEY
 );
+
+-- Newsletters shown in the public archive at /newsletter (src/lib/newsletter.js).
+-- Off unless listed here: issues can carry subscriber-only early chapters.
+CREATE TABLE IF NOT EXISTS newsletter_public (
+  newsletter_id TEXT PRIMARY KEY
+);

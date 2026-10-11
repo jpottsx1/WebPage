@@ -43,7 +43,9 @@
  */
 
 import { handleDownloadsRequest, SECTIONS } from "./lib/downloads.js";
-import { logoutCookieHeader } from "./lib/auth.js";
+import { logoutCookieHeader, requireSession } from "./lib/auth.js";
+import { withErrorAlerts, healthCheck, scheduledHealthCheck, sendAlert } from "./lib/alerts.js";
+import { pageShell } from "./lib/layout.js";
 import { handleBlogRequest } from "./lib/blog.js";
 import { handleSeoRequest } from "./lib/seo.js";
 import { handleXmlRpcRequest } from "./lib/xmlrpc.js";
@@ -260,11 +262,62 @@ function escapeHtml(s) {
     .replace(/"/g, "&quot;");
 }
 
+// What the site needs to work, for the daily health check (src/lib/alerts.js).
+const ALERTS = {
+  site: "jeffreypotts.ca",
+  defaultTo: "me@jeffreypotts.ca",
+  defaultFrom: "Site alerts <alerts@jeffreypotts.ca>",
+  required: [
+    "DB", "FILES", "ASSETS",
+    "RESEND_API_KEY", "FROM_EMAIL", "NOTIFY_EMAIL", "MAILING_ADDRESS",
+    "SESSION_SECRET", "ADMIN_PASSWORD_BLOG", "BLOG_APP_USER", "BLOG_APP_PASSWORD",
+    "TURNSTILE_SECRET", "TURNSTILE_HOSTNAMES",
+  ],
+  tables: [
+    "subscribers", "newsletters", "newsletter_public", "posts", "post_tags", "post_drafts",
+    "post_image_alt", "download_files", "rate_events",
+  ],
+};
+
+const handle = withErrorAlerts((request, env) => route(request, env), ALERTS);
+
 export default {
   async fetch(request, env, ctx) {
-    return withSecurityHeaders(await route(request, env));
+    return withSecurityHeaders(await handle(request, env, ctx));
+  },
+  // Daily at 12:00 UTC (wrangler.jsonc triggers): email only if something's wrong.
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(scheduledHealthCheck(env, ALERTS));
   },
 };
+
+// /admin/health: run the daily checks now, or send a test alert.
+async function handleHealth(request, env, url) {
+  if (!(await requireSession(request, "admin-blog", env.SESSION_SECRET))) {
+    return new Response(null, { status: 303, headers: { Location: "/admin/blog" } });
+  }
+  let notice = "";
+  if (request.method === "POST" && url.pathname === "/admin/health/test") {
+    const r = await sendAlert(env, ALERTS, { kind: "test", subject: "Test alert", lines: ["You asked for this test from /admin/health. Alerts reach you."], force: true });
+    notice = r.sent ? "Test alert sent. Check your inbox." : `The test alert didn't send: ${r.reason}.`;
+  }
+  const problems = await healthCheck(env, ALERTS);
+  const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;");
+  const bodyHtml = `
+    <p class="eyebrow">Admin</p>
+    <h1>Site health</h1>
+    ${notice ? `<p class="notice-msg">${esc(notice)}</p>` : ""}
+    ${problems.length
+      ? `<p class="error-msg">${problems.length} problem${problems.length === 1 ? "" : "s"} found:</p><ul>${problems.map((p) => `<li>${esc(p)}</li>`).join("")}</ul>`
+      : `<p class="notice-msg">All checks passed: settings, secrets, database tables, Resend and Turnstile.</p>`}
+    <p>The same checks run every morning, and email ${esc(env.ALERT_EMAIL || env.NOTIFY_EMAIL || ALERTS.defaultTo)} if anything is wrong. Errors on the live site email it too, at most once an hour each.</p>
+    <form method="POST" action="/admin/health/test"><button type="submit" class="btn btn-ghost">Send me a test alert</button></form>
+    <p style="margin-top:28px;"><a href="/admin/blog">Blog</a> &middot; <a href="/admin/newsletter">Newsletter</a></p>`;
+  return new Response(pageShell({ title: "Admin — Site health", noindex: true, signOut: "/admin/blog", bodyHtml }), {
+    // Always 200: a 5xx here would set off the live-error alert on every visit.
+    headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" },
+  });
+}
 
 // Signs out of every admin area (blog and newsletter, and the three section
 // file managers) and returns to the login of the page the button was on.
@@ -299,6 +352,9 @@ async function route(request, env) {
   const url = new URL(request.url);
   if (isCrossSiteAdminPost(request, url)) {
     return new Response("Forbidden: cross-site form submission.", { status: 403, headers: { "Content-Type": "text/plain; charset=utf-8" } });
+  }
+  if (url.pathname === "/admin/health" || url.pathname === "/admin/health/test") {
+    return handleHealth(request, env, url);
   }
   if (url.pathname === "/admin/logout" && request.method === "POST") {
     return handleLogout(await request.formData().catch(() => null));

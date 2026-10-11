@@ -45,12 +45,17 @@ export async function handleSeoRequest(request, env, url) {
       .prepare(`SELECT DISTINCT t.slug FROM post_tags t JOIN posts p ON p.id = t.post_id WHERE ${publishedSql("p")}`)
       .bind(now)
       .all();
+    const { results: issues } = await env.DB
+      .prepare("SELECT n.id, n.sent_at FROM newsletters n JOIN newsletter_public p ON p.newsletter_id = n.id ORDER BY n.sent_at DESC")
+      .all();
     const latest = posts.length ? isoDate(posts[0].updated_at || posts[0].created_at) : null;
     const entries = [
       { loc: `${SITE_URL}/` },
       { loc: `${SITE_URL}/blog/`, lastmod: latest },
       ...posts.map((p) => ({ loc: `${SITE_URL}/blog/${p.slug}`, lastmod: isoDate(p.updated_at || p.created_at) })),
       ...tags.map((t) => ({ loc: `${SITE_URL}/blog/tag/${t.slug}` })),
+      { loc: `${SITE_URL}/newsletter` },
+      ...issues.map((n) => ({ loc: `${SITE_URL}/newsletter/${n.id}`, lastmod: isoDate(n.sent_at) })),
     ];
     const body = entries
       .map((e) => `  <url><loc>${escapeHtml(e.loc)}</loc>${e.lastmod ? `<lastmod>${e.lastmod}</lastmod>` : ""}</url>`)

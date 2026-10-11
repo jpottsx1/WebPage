@@ -106,6 +106,9 @@ const BASE_STYLE = `
   .post-tags a, .post-list .post-tags a { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--link); text-decoration: none; border: 1px solid var(--line); padding: 3px 10px; background: var(--surface); }
   .post-tags a:hover, .post-list .post-tags a:hover { color: var(--rust-text); border-color: var(--rust); }
   .post-body + .post-tags { margin-top: 32px; }
+  .admin-form label.checkbox { display: flex; align-items: center; gap: 8px; text-transform: none; letter-spacing: 0; font-weight: 400; font-size: 0.95rem; color: var(--ink); margin: 6px 0 10px; }
+  .admin-form label.checkbox input { width: auto; margin: 0; }
+
   /* admin: post status */
   .status-field { border: 1px solid var(--line); padding: 12px 16px 6px; margin: 0 0 18px; }
   .status-field legend { font-family:'Helvetica Neue',Arial,sans-serif; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.12em; font-weight: 700; color: var(--heading); padding: 0 6px; }

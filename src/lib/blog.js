@@ -66,7 +66,7 @@ function sanitizeImageName(name) {
 
 // Newsletter signup at the end of every post. Posts to /api/subscribe with a
 // Turnstile token (action "subscribe"), like the form on the home page.
-function subscribeBoxHtml() {
+export function subscribeBoxHtml() {
   return `
       <aside class="post-subscribe" aria-labelledby="ps-heading">
         <h2 id="ps-heading">Get new writing first</h2>
