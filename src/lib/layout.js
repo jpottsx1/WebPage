@@ -106,6 +106,13 @@ const BASE_STYLE = `
   .post-tags a, .post-list .post-tags a { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--link); text-decoration: none; border: 1px solid var(--line); padding: 3px 10px; background: var(--surface); }
   .post-tags a:hover, .post-list .post-tags a:hover { color: var(--rust-text); border-color: var(--rust); }
   .post-body + .post-tags { margin-top: 32px; }
+  /* admin: post status */
+  .status-field { border: 1px solid var(--line); padding: 12px 16px 6px; margin: 0 0 18px; }
+  .status-field legend { font-family:'Helvetica Neue',Arial,sans-serif; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.12em; font-weight: 700; color: var(--heading); padding: 0 6px; }
+  .admin-form .status-field label.radio { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; text-transform: none; letter-spacing: 0; font-weight: 400; font-size: 0.95rem; color: var(--ink); margin: 0 0 10px; }
+  .admin-form .status-field input[type=radio] { width: auto; margin: 0; }
+  .admin-form .status-field input[type=datetime-local] { width: auto; margin: 0; padding: 6px 8px; font-size: 0.9rem; }
+
   /* share links and older/newer links on blog posts */
   .post-share { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin: 32px 0 0; padding-top: 18px; border-top: 1px solid var(--line); font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.88rem; }
   .post-share-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); }

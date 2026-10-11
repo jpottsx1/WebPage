@@ -19,9 +19,9 @@
  * Tags come and go through MarsEdit's Tags field (mt_keywords, a
  * comma-separated string) and are stored by tags.js.
  *
- * Not supported: categories (always empty), and drafts kept on the
- * server — publish=false is refused, since the posts table has no
- * unpublished state. Drafts stay local in MarsEdit until published.
+ * Drafts: "Send to Blog as Draft" (publish=false) saves a draft on the
+ * server, hidden from readers until published. A post date in the future
+ * schedules the post. Not supported: categories (always empty).
  *
  * Workers have no DOMParser, so this includes a small XML-RPC parser. It
  * handles every value type in the spec; it is not a general XML parser.
@@ -31,6 +31,7 @@ import { checkPassword } from "./auth.js";
 import { authLocked, recordAuthFailure, AUTH_LOCKED_MESSAGE } from "./ratelimit.js";
 import { uniqueSlug } from "./blog.js";
 import { parseTags, tagsToString, setPostTags, deletePostTags, tagsForPosts } from "./tags.js";
+import { draftIdSet, isDraft, setDraft, postState } from "./publishing.js";
 
 const BLOG_ID = "1";
 const MAX_MEDIA_BYTES = 25 * 1024 * 1024;
@@ -222,10 +223,11 @@ function str(v) {
   return v === null || v === undefined ? "" : String(v);
 }
 
-function requirePublish(publish, content) {
-  if (publish === false || (content && str(content.post_status) === "draft")) {
-    throw new Fault(400, "This blog doesn't keep drafts on the server. Keep it as a local draft in MarsEdit, and publish when it's ready.");
-  }
+// MarsEdit's "Send to Blog as Draft" sends publish=false (some clients also
+// set post_status "draft"). Drafts are kept on the server, hidden from readers;
+// a future post date schedules the post instead (src/lib/publishing.js).
+function wantsDraft(publish, content) {
+  return publish === false || (content && str(content.post_status) === "draft");
 }
 
 function postBody(content) {
@@ -238,7 +240,7 @@ function postDate(content) {
   return d instanceof Date && !isNaN(d) ? d : null;
 }
 
-function postStruct(post, ctx, tags) {
+function postStruct(post, ctx, tags, draft = false) {
   const link = `${ctx.origin}/blog/${post.slug}`;
   return {
     postid: post.id,
@@ -251,7 +253,8 @@ function postStruct(post, ctx, tags) {
     date_modified_gmt: new Date(post.updated_at),
     wp_slug: post.slug,
     userid: "1",
-    post_status: "publish",
+    // WordPress's names, which MarsEdit understands: draft, future (scheduled), publish.
+    post_status: { draft: "draft", scheduled: "future", published: "publish" }[postState(post, draft)],
     categories: [],
     mt_keywords: tagsToString(tags),
     mt_excerpt: "",
@@ -305,20 +308,20 @@ const METHODS = {
     const limit = Math.min(Math.max(parseInt(count, 10) || 20, 1), 500);
     const { results } = await ctx.env.DB.prepare("SELECT * FROM posts ORDER BY created_at DESC LIMIT ?").bind(limit).all();
     const tags = await tagsForPosts(ctx.env, results.map((p) => p.id));
-    return results.map((p) => postStruct(p, ctx, tags.get(p.id)));
+    const drafts = await draftIdSet(ctx.env, results.map((p) => p.id));
+    return results.map((p) => postStruct(p, ctx, tags.get(p.id), drafts.has(p.id)));
   },
 
   async "metaWeblog.getPost"([postId, user, pass], ctx) {
     await authenticate(ctx, user, pass);
     const post = await loadPost(ctx, postId);
     const tags = await tagsForPosts(ctx.env, [post.id]);
-    return postStruct(post, ctx, tags.get(post.id));
+    return postStruct(post, ctx, tags.get(post.id), await isDraft(ctx.env, post.id));
   },
 
   async "metaWeblog.newPost"([, user, pass, content, publish], ctx) {
     await authenticate(ctx, user, pass);
     content = content || {};
-    requirePublish(publish, content);
     const title = str(content.title).trim();
     const body = postBody(content);
     if (!title) throw new Fault(400, "A post needs a title.");
@@ -334,13 +337,13 @@ const METHODS = {
       .run();
     const tags = parseTags(content.mt_keywords);
     if (tags.length) await setPostTags(ctx.env, id, tags);
+    await setDraft(ctx.env, id, wantsDraft(publish, content));
     return id;
   },
 
   async "metaWeblog.editPost"([postId, user, pass, content, publish], ctx) {
     await authenticate(ctx, user, pass);
     content = content || {};
-    requirePublish(publish, content);
     const post = await loadPost(ctx, postId);
     const title = str(content.title).trim() || post.title;
     const body = postBody(content).trim() ? postBody(content) : post.body_html;
@@ -365,6 +368,9 @@ const METHODS = {
     if (Object.prototype.hasOwnProperty.call(content, "mt_keywords")) {
       await setPostTags(ctx.env, post.id, parseTags(content.mt_keywords));
     }
+    if (typeof publish === "boolean" || content.post_status !== undefined) {
+      await setDraft(ctx.env, post.id, wantsDraft(publish, content));
+    }
     return true;
   },
 
@@ -374,13 +380,15 @@ const METHODS = {
     if (post.image_key) await ctx.bucket.delete(post.image_key);
     await ctx.env.DB.prepare("DELETE FROM posts WHERE id = ?").bind(post.id).run();
     await deletePostTags(ctx.env, post.id);
+    await setDraft(ctx.env, post.id, false);
     return true;
   },
 
   async "mt.publishPost"([postId, user, pass], ctx) {
     await authenticate(ctx, user, pass);
-    await loadPost(ctx, postId);
-    return true; // every post is already published
+    const post = await loadPost(ctx, postId);
+    await setDraft(ctx.env, post.id, false); // a scheduled date still waits for its time
+    return true;
   },
 
   async "metaWeblog.newMediaObject"([, user, pass, file], ctx) {

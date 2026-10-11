@@ -8,6 +8,7 @@
  */
 
 import { escapeHtml } from "./util.js";
+import { nowIso, publishedSql } from "./publishing.js";
 
 const WORDS_PER_MINUTE = 230;
 
@@ -23,8 +24,14 @@ export function readingTime(bodyHtml) {
 
 export async function adjacentPosts(env, post) {
   const [older, newer] = await Promise.all([
-    env.DB.prepare("SELECT slug, title FROM posts WHERE created_at < ? ORDER BY created_at DESC LIMIT 1").bind(post.created_at).first(),
-    env.DB.prepare("SELECT slug, title FROM posts WHERE created_at > ? ORDER BY created_at ASC LIMIT 1").bind(post.created_at).first(),
+    env.DB
+      .prepare(`SELECT slug, title FROM posts WHERE created_at < ? AND ${publishedSql()} ORDER BY created_at DESC LIMIT 1`)
+      .bind(post.created_at, nowIso())
+      .first(),
+    env.DB
+      .prepare(`SELECT slug, title FROM posts WHERE created_at > ? AND ${publishedSql()} ORDER BY created_at ASC LIMIT 1`)
+      .bind(post.created_at, nowIso())
+      .first(),
   ]);
   return { older, newer };
 }
@@ -89,4 +96,17 @@ export function shareHtml(url, title) {
         });
       })();
       </script>`;
+}
+
+/** The first <img> in a post body, as a path or https URL; null if none. */
+export function firstImage(bodyHtml) {
+  const m = String(bodyHtml || "").match(/<img\b[^>]*?\bsrc\s*=\s*["']([^"']+)["']/i);
+  if (!m) return null;
+  const src = m[1].trim();
+  return src.startsWith("/") || src.startsWith("https://") ? src : null;
+}
+
+/** Root-relative src/href values made absolute, for feed readers. */
+export function absolutizeUrls(bodyHtml, siteUrl) {
+  return String(bodyHtml || "").replace(/(\s(?:src|href)\s*=\s*["'])\/(?!\/)/gi, `$1${siteUrl}/`);
 }

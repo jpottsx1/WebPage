@@ -280,8 +280,26 @@ function handleLogout(form) {
   return new Response(null, { status: 303, headers });
 }
 
+// Admin forms only ever post from this site's own pages. A POST to /admin/*
+// whose Origin is another site is a forged (CSRF) request and is refused.
+// Browsers send Origin on every form POST; a request without one isn't from a
+// browser page, so it can't be a CSRF attempt (and still needs the session).
+function isCrossSiteAdminPost(request, url) {
+  if (request.method !== "POST" || !url.pathname.startsWith("/admin/")) return false;
+  const origin = request.headers.get("Origin");
+  if (!origin) return false;
+  try {
+    return new URL(origin).host !== url.host;
+  } catch (e) {
+    return true; // "null" and other opaque origins
+  }
+}
+
 async function route(request, env) {
   const url = new URL(request.url);
+  if (isCrossSiteAdminPost(request, url)) {
+    return new Response("Forbidden: cross-site form submission.", { status: 403, headers: { "Content-Type": "text/plain; charset=utf-8" } });
+  }
   if (url.pathname === "/admin/logout" && request.method === "POST") {
     return handleLogout(await request.formData().catch(() => null));
   }

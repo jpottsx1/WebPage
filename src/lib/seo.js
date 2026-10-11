@@ -8,6 +8,8 @@
 
 import { escapeHtml } from "./util.js";
 import { excerpt } from "./blog.js";
+import { nowIso, publishedSql } from "./publishing.js";
+import { absolutizeUrls } from "./postextras.js";
 
 export const SITE_URL = "https://jeffreypotts.ca";
 
@@ -34,10 +36,15 @@ export async function handleSeoRequest(request, env, url) {
   }
 
   if (path === "/sitemap.xml") {
-    const { results: posts } = await env.DB.prepare(
-      "SELECT slug, created_at, updated_at FROM posts ORDER BY created_at DESC"
-    ).all();
-    const { results: tags } = await env.DB.prepare("SELECT DISTINCT slug FROM post_tags").all();
+    const now = nowIso();
+    const { results: posts } = await env.DB
+      .prepare(`SELECT slug, created_at, updated_at FROM posts WHERE ${publishedSql()} ORDER BY created_at DESC`)
+      .bind(now)
+      .all();
+    const { results: tags } = await env.DB
+      .prepare(`SELECT DISTINCT t.slug FROM post_tags t JOIN posts p ON p.id = t.post_id WHERE ${publishedSql("p")}`)
+      .bind(now)
+      .all();
     const latest = posts.length ? isoDate(posts[0].updated_at || posts[0].created_at) : null;
     const entries = [
       { loc: `${SITE_URL}/` },
@@ -55,9 +62,10 @@ export async function handleSeoRequest(request, env, url) {
   }
 
   if (path === "/blog/feed.xml" || path === "/feed.xml" || path === "/rss.xml") {
-    const { results: posts } = await env.DB.prepare(
-      "SELECT slug, title, body_html, created_at FROM posts ORDER BY created_at DESC LIMIT 30"
-    ).all();
+    const { results: posts } = await env.DB
+      .prepare(`SELECT slug, title, body_html, created_at FROM posts WHERE ${publishedSql()} ORDER BY created_at DESC LIMIT 30`)
+      .bind(nowIso())
+      .all();
     const items = posts
       .map((p) => {
         const link = `${SITE_URL}/blog/${p.slug}`;
@@ -68,12 +76,13 @@ export async function handleSeoRequest(request, env, url) {
       <guid isPermaLink="true">${escapeHtml(link)}</guid>
       ${isNaN(d) ? "" : `<pubDate>${d.toUTCString()}</pubDate>`}
       <description>${escapeHtml(excerpt(p.body_html, 300))}</description>
+      <content:encoded><![CDATA[${absolutizeUrls(p.body_html, SITE_URL).replace(/]]>/g, "]]]]><![CDATA[>")}]]></content:encoded>
     </item>`;
       })
       .join("\n");
     return xml(
       `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
     <title>Jeffrey Potts — Blog</title>
     <link>${SITE_URL}/blog/</link>

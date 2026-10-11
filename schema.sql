@@ -82,3 +82,10 @@ CREATE TABLE IF NOT EXISTS post_image_alt (
   post_id TEXT PRIMARY KEY,
   alt     TEXT NOT NULL
 );
+
+-- Draft blog posts (src/lib/publishing.js): a post listed here is hidden from
+-- readers. Scheduled posts need no table: a created_at in the future keeps a
+-- post hidden until then.
+CREATE TABLE IF NOT EXISTS post_drafts (
+  post_id TEXT PRIMARY KEY
+);
