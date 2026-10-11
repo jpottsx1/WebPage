@@ -23,6 +23,7 @@ import { checkPassword, requireSession, loginCookieHeader, loginFormHtml } from 
 import { authLocked, recordAuthFailure, AUTH_LOCKED_MESSAGE } from "./ratelimit.js";
 import { TURNSTILE_SITEKEY } from "./turnstile.js";
 import { getImageAlt, setImageAlt, deleteImageAlt } from "./imagealt.js";
+import { readingTime, adjacentPosts, postNavHtml, shareHtml } from "./postextras.js";
 import { parseTags, tagsToString, setPostTags, deletePostTags, tagsForPosts } from "./tags.js";
 
 const ADMIN_AREA = "admin-blog";
@@ -140,7 +141,7 @@ async function renderPostList(env, posts) {
       (p) => `
     <li>
       <a href="/blog/${p.slug}">${escapeHtml(p.title)}</a>
-      <span class="post-date">${formatDate(p.created_at)}</span>
+      <span class="post-date">${formatDate(p.created_at)} &middot; ${readingTime(p.body_html)}</span>
       <p class="post-excerpt">${escapeHtml(excerpt(p.body_html))}</p>
       ${tagLinks(tags.get(p.id))}
     </li>`
@@ -421,13 +422,16 @@ export async function handleBlogRequest(request, env, url) {
       ? `<img src="/blog/image/${post.id}" alt="${escapeHtml(await getImageAlt(env, post.id))}" style="width:100%;height:auto;margin:0 0 24px;border:1px solid var(--line);" />`
       : "";
     const tags = await tagsForPosts(env, [post.id]);
+    const adjacent = await adjacentPosts(env, post);
     const bodyHtml = `
-      <p class="eyebrow">${formatDate(post.created_at)}</p>
+      <p class="eyebrow">${formatDate(post.created_at)} &middot; ${readingTime(post.body_html)}</p>
       <h1>${escapeHtml(post.title)}</h1>
       ${imageHtml}
       <div class="post-body">${post.body_html}</div>
       ${tagLinks(tags.get(post.id))}
+      ${shareHtml(`https://jeffreypotts.ca/blog/${post.slug}`, post.title)}
       ${subscribeBoxHtml()}
+      ${postNavHtml(adjacent)}
       <p style="margin-top:40px;"><a href="/blog/">&larr; Back to all posts</a></p>
     `;
     const desc = excerpt(post.body_html, 160);
