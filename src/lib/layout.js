@@ -106,6 +106,23 @@ const BASE_STYLE = `
   .post-tags a, .post-list .post-tags a { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--link); text-decoration: none; border: 1px solid var(--line); padding: 3px 10px; background: var(--surface); }
   .post-tags a:hover, .post-list .post-tags a:hover { color: var(--rust-text); border-color: var(--rust); }
   .post-body + .post-tags { margin-top: 32px; }
+  /* share links and older/newer links on blog posts */
+  .post-share { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin: 32px 0 0; padding-top: 18px; border-top: 1px solid var(--line); font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.88rem; }
+  .post-share-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); }
+  .post-share a { color: var(--link); text-decoration: none; font-weight: 700; }
+  .post-share a:hover { color: var(--rust-text); }
+  .post-share button { font: inherit; font-weight: 700; color: var(--link); background: transparent; border: 1px solid var(--line); border-radius: 2px; padding: 4px 10px; cursor: pointer; }
+  .post-share button:hover { color: var(--rust-text); border-color: var(--rust); }
+  .post-share-status { color: var(--muted); }
+  .post-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 40px 0 0; font-family: 'Helvetica Neue', Arial, sans-serif; }
+  .post-nav a { display: block; text-decoration: none; color: var(--heading); font-weight: 700; padding: 14px 16px; border: 1px solid var(--line); background: var(--surface); }
+  .post-nav a:hover { border-color: var(--rust); }
+  .post-nav a span { display: block; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--rust-text); margin-bottom: 4px; }
+  .post-nav-prev span::before { content: "← "; }
+  .post-nav-next { text-align: right; grid-column: 2; }
+  .post-nav-next span::after { content: " →"; }
+  @media (max-width: 600px) { .post-nav { grid-template-columns: 1fr; } .post-nav-next { grid-column: 1; } }
+
   /* newsletter box at the end of blog posts */
   .post-subscribe { margin: 48px 0 0; padding: 28px 30px 24px; background: var(--surface); border: 1px solid var(--line); border-top: 3px solid var(--rust); }
   .post-subscribe h2 { margin: 0 0 8px; font-size: 1.25rem; }
