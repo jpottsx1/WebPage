@@ -17,29 +17,61 @@
     --ink:        #2a2622;
     --muted:      #6f6a5c;
     --line:       rgba(42,38,34,0.14);
+    /* Roles. Light values are the palette above; dark mode swaps them. */
+    --bg:           var(--cream);
+    --surface:      var(--paper);
+    --heading:      var(--teal-dark);
+    --link:         var(--teal);
+    --rust-text:    var(--rust);
+    --on-accent:    #f5efe1;
+    --input-bg:     #fff;
+    color-scheme: light dark;
   }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink:          #ebe3d3;
+      --muted:        #a99f8c;
+      --line:         rgba(235,227,211,0.16);
+      --bg:           #191714;
+      --surface:      #24211d;
+      --heading:      #ecdfc4;
+      --link:         #8cc4d1;
+      --rust-text:    #e58a6e;
+      --input-bg:     #1c1a17;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+  }
+  .skip-link {
+    position: absolute; left: 12px; top: -60px; z-index: 100;
+    background: var(--teal-dark); color: var(--on-accent); padding: 10px 16px;
+    font-family: 'Helvetica Neue', Arial, sans-serif; font-weight: 700; text-decoration: none;
+  }
+  .skip-link:focus { top: 12px; }
   * { box-sizing: border-box; }
   body {
     margin: 0; font-family: Georgia, 'Times New Roman', serif; color: var(--ink);
-    background: var(--cream); line-height: 1.7; -webkit-font-smoothing: antialiased;
+    background: var(--bg); line-height: 1.7; -webkit-font-smoothing: antialiased;
   }
   h1, h2, .nav-brand {
-    font-family: 'Helvetica Neue', Arial, sans-serif; font-weight: 700; color: var(--teal-dark);
+    font-family: 'Helvetica Neue', Arial, sans-serif; font-weight: 700; color: var(--heading);
   }
   .wrap { width: 100%; max-width: 760px; margin: 0 auto; padding: 0 24px; }
-  header { padding: 26px 0; border-bottom: 1px solid var(--line); background: var(--paper); }
+  header { padding: 26px 0; border-bottom: 1px solid var(--line); background: var(--surface); }
   .nav-brand { text-decoration: none; font-size: 1.05rem; letter-spacing: 0.08em; text-transform: uppercase; }
   main { padding: 56px 0 80px; }
   h1 { font-size: 2rem; margin: 0 0 6px; }
   .updated { color: var(--muted); font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.85rem; margin: 0 0 40px; }
   h2 { font-size: 1.2rem; margin: 36px 0 12px; }
   p, li { font-size: 1.05rem; }
-  a { color: var(--rust); }
+  a { color: var(--rust-text); }
   footer { background: var(--teal-dark); color: var(--cream); padding: 30px 0; text-align: center; font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.85rem; }
   footer a { color: var(--gold-soft); }
 </style>
 </head>
 <body>
+<a class="skip-link" href="#main">Skip to content</a>
 
 <header>
   <div class="wrap">
@@ -47,7 +79,7 @@
   </div>
 </header>
 
-<main>
+<main id="main">
   <div class="wrap">
     <h1>Privacy Policy</h1>
     <p class="updated">Last updated: October 2026</p>
