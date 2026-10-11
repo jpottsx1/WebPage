@@ -71,6 +71,18 @@ const BASE_STYLE = `
   .post-tags a, .post-list .post-tags a { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--teal); text-decoration: none; border: 1px solid var(--line); padding: 3px 10px; background: var(--paper); }
   .post-tags a:hover, .post-list .post-tags a:hover { color: var(--rust); border-color: var(--rust); }
   .post-body + .post-tags { margin-top: 32px; }
+  /* newsletter box at the end of blog posts */
+  .post-subscribe { margin: 48px 0 0; padding: 28px 30px 24px; background: var(--paper); border: 1px solid var(--line); border-top: 3px solid var(--rust); }
+  .post-subscribe h2 { margin: 0 0 8px; font-size: 1.25rem; }
+  .post-subscribe > p { margin: 0 0 18px; color: var(--muted); }
+  .ps-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+  @media (max-width: 600px) { .ps-fields { grid-template-columns: 1fr; } }
+  .post-subscribe label { display: block; font-family:'Helvetica Neue',Arial,sans-serif; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.12em; font-weight: 700; color: var(--teal-dark); margin: 0 0 6px; }
+  .post-subscribe input { width: 100%; padding: 11px 13px; margin-bottom: 14px; font-size: 1rem; font-family: Georgia, serif; border: 1px solid var(--line); background: #fff; color: var(--ink); border-radius: 2px; }
+  .post-subscribe .turnstile-slot { min-height: 65px; margin: 0 0 14px; }
+  .ps-msg { margin: 12px 0 0; font-family:'Helvetica Neue',Arial,sans-serif; font-size: 0.92rem; min-height: 1.2em; }
+  .ps-msg[data-state="ok"] { color: var(--teal); }
+  .ps-msg[data-state="err"] { color: var(--rust); }
   .field-hint { display: block; margin: -10px 0 16px; color: var(--muted); font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.82rem; }
 `;
 

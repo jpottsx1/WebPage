@@ -21,6 +21,7 @@ import { escapeHtml, slugify, formatDate } from "./util.js";
 import { pageShell } from "./layout.js";
 import { checkPassword, requireSession, loginCookieHeader, loginFormHtml } from "./auth.js";
 import { authLocked, recordAuthFailure, AUTH_LOCKED_MESSAGE } from "./ratelimit.js";
+import { TURNSTILE_SITEKEY } from "./turnstile.js";
 import { parseTags, tagsToString, setPostTags, deletePostTags, tagsForPosts } from "./tags.js";
 
 const ADMIN_AREA = "admin-blog";
@@ -58,6 +59,70 @@ export function excerpt(bodyHtml, len = 160) {
 
 function sanitizeImageName(name) {
   return String(name || "image").replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 100);
+}
+
+// Newsletter signup at the end of every post. Posts to /api/subscribe with a
+// Turnstile token (action "subscribe"), like the form on the home page.
+function subscribeBoxHtml() {
+  return `
+      <aside class="post-subscribe" aria-labelledby="ps-heading">
+        <h2 id="ps-heading">Get new writing first</h2>
+        <p>Early chapters, new posts and the occasional story from behind the pages, straight to your inbox. Free; unsubscribe anytime.</p>
+        <form id="ps-form" novalidate>
+          <div class="ps-fields">
+            <div><label for="ps-name">Your name</label><input type="text" id="ps-name" name="name" autocomplete="name" maxlength="120" required /></div>
+            <div><label for="ps-email">Email address</label><input type="email" id="ps-email" name="email" autocomplete="email" maxlength="254" required /></div>
+          </div>
+          <div id="ps-turnstile" class="turnstile-slot"></div>
+          <button type="submit" class="btn btn-primary">Subscribe</button>
+          <p id="ps-msg" class="ps-msg" role="status" aria-live="polite"></p>
+        </form>
+      </aside>
+      <script>
+      (function () {
+        var form = document.getElementById("ps-form");
+        var msg = document.getElementById("ps-msg");
+        var btn = form.querySelector("button");
+        var widgetId;
+        window.onPostSubscribeTurnstileLoad = function () {
+          widgetId = window.turnstile.render("#ps-turnstile", { sitekey: "${TURNSTILE_SITEKEY}", action: "subscribe" });
+        };
+        function show(state, text) { msg.dataset.state = state; msg.textContent = text; }
+        form.addEventListener("submit", async function (e) {
+          e.preventDefault();
+          var name = document.getElementById("ps-name").value.trim();
+          var email = document.getElementById("ps-email").value.trim();
+          if (!name) return show("err", "Please add your name so I know who I\u2019m writing to.");
+          if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) return show("err", "That email doesn\u2019t look right \u2014 mind checking it?");
+          var token = window.turnstile && widgetId !== undefined ? window.turnstile.getResponse(widgetId) : "";
+          if (!token) return show("err", "Please complete the \u201cVerify you are human\u201d check above the button, then try again.");
+          btn.disabled = true;
+          show("", "");
+          try {
+            var res = await fetch("/api/subscribe", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "Accept": "application/json" },
+              body: JSON.stringify({ name: name, email: email, "cf-turnstile-response": token }),
+            });
+            var data = await res.json().catch(function () { return {}; });
+            if (res.ok) {
+              form.reset();
+              show("ok", "Welcome aboard, " + (name.split(/\\s+/)[0] || "friend") + " \u2014 you\u2019re on the list. Check your inbox for a welcome note.");
+            } else if (res.status === 409) {
+              show("ok", "You\u2019re already on the list \u2014 all set. Thanks!");
+            } else {
+              show("err", data.error || "Something went wrong. Please try again in a moment.");
+            }
+          } catch (err) {
+            show("err", "Couldn\u2019t reach the server. Please try again in a moment.");
+          } finally {
+            btn.disabled = false;
+            if (window.turnstile && widgetId !== undefined) window.turnstile.reset(widgetId);
+          }
+        });
+      })();
+      </script>
+      <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onPostSubscribeTurnstileLoad&render=explicit" async defer></script>`;
 }
 
 function tagLinks(tags) {
@@ -352,6 +417,7 @@ export async function handleBlogRequest(request, env, url) {
       ${imageHtml}
       <div class="post-body">${post.body_html}</div>
       ${tagLinks(tags.get(post.id))}
+      ${subscribeBoxHtml()}
       <p style="margin-top:40px;"><a href="/blog/">&larr; Back to all posts</a></p>
     `;
     const desc = excerpt(post.body_html, 160);

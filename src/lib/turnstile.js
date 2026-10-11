@@ -10,6 +10,9 @@
  * resets its widget after every submission attempt.
  */
 
+// Public: the widget's sitekey, also hard-coded in index.html.
+export const TURNSTILE_SITEKEY = "0x4AAAAAAFTX-6k4xMYiEYy3";
+
 const SITEVERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
 
 export const TURNSTILE_FAILED_MESSAGE =
