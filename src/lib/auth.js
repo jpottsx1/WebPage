@@ -94,6 +94,11 @@ export async function loginCookieHeader(area, secret) {
   return `${cookieName(area)}=${token}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${Math.floor(SESSION_TTL_MS / 1000)}`;
 }
 
+/** A Set-Cookie value that removes the session cookie for `area`. */
+export function logoutCookieHeader(area) {
+  return `${cookieName(area)}=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0`;
+}
+
 async function sha256Hex(str) {
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
   return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");

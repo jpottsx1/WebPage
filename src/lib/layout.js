@@ -53,6 +53,10 @@ const BASE_STYLE = `
   .eyebrow { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.16em; color: var(--rust-text); }
   .wrap { width: 100%; max-width: 760px; margin: 0 auto; padding: 0 24px; }
   header { padding: 26px 0; border-bottom: 1px solid var(--line); background: var(--surface); }
+  .header-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+  .sign-out { margin: 0; }
+  .sign-out button { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.85rem; font-weight: 700; color: var(--heading); background: transparent; border: 1px solid var(--line); padding: 7px 14px; border-radius: 2px; cursor: pointer; }
+  .sign-out button:hover { border-color: var(--rust); color: var(--rust-text); }
   .nav-brand { text-decoration: none; font-size: 1.05rem; letter-spacing: 0.08em; text-transform: uppercase; }
   main { padding: 56px 0 80px; }
   h1 { font-size: 2rem; margin: 10px 0 30px; }
@@ -117,7 +121,7 @@ const BASE_STYLE = `
   .field-hint { display: block; margin: -10px 0 16px; color: var(--muted); font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 0.82rem; }
 `;
 
-export function pageShell({ title, bodyHtml, noindex = false, description = "", canonical = "", image = "", ogType = "website", jsonLd = null }) {
+export function pageShell({ title, bodyHtml, signOut = "", noindex = false, description = "", canonical = "", image = "", ogType = "website", jsonLd = null }) {
   const SITE = "https://jeffreypotts.ca";
   const abs = (u) => (u.startsWith("http") ? u : SITE + u);
   const seo = [];
@@ -148,7 +152,11 @@ ${seo.join("\n")}
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to content</a>
-<header><div class="wrap"><a href="/" class="nav-brand">Jeffrey Potts</a></div></header>
+<header><div class="wrap header-row"><a href="/" class="nav-brand">Jeffrey Potts</a>${
+  signOut
+    ? `<form method="POST" action="/admin/logout" class="sign-out"><input type="hidden" name="next" value="${escapeHtml(signOut)}" /><button type="submit">Sign out</button></form>`
+    : ""
+}</div></header>
 <main id="main"><div class="wrap">${bodyHtml}</div></main>
 <footer><div class="wrap">&copy; <span id="year"></span> Jeffrey Potts. All rights reserved. &nbsp;&middot;&nbsp; <a href="/">Back to the site</a></div></footer>
 <script>document.getElementById('year').textContent = new Date().getFullYear();</script>

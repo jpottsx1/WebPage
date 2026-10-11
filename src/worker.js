@@ -42,7 +42,8 @@
  * See SETUP.md for the one-time setup steps.
  */
 
-import { handleDownloadsRequest } from "./lib/downloads.js";
+import { handleDownloadsRequest, SECTIONS } from "./lib/downloads.js";
+import { logoutCookieHeader } from "./lib/auth.js";
 import { handleBlogRequest } from "./lib/blog.js";
 import { handleSeoRequest } from "./lib/seo.js";
 import { handleXmlRpcRequest } from "./lib/xmlrpc.js";
@@ -265,8 +266,25 @@ export default {
   },
 };
 
+// Signs out of every admin area (blog and newsletter, and the three section
+// file managers) and returns to the login of the page the button was on.
+// Visitor download sessions are left alone. Sessions are signed cookies with
+// no server-side store, so this signs out this browser only.
+function handleLogout(form) {
+  const allowed = ["/admin/blog", "/admin/newsletter", ...SECTIONS.map((s) => `/admin/${s.slug}`)];
+  const next = (form && form.get("next")) || "";
+  const headers = new Headers({ Location: allowed.includes(next) ? next : "/admin/blog", "Cache-Control": "no-store" });
+  for (const area of ["admin-blog", ...SECTIONS.map((s) => `admin-${s.slug}`)]) {
+    headers.append("Set-Cookie", logoutCookieHeader(area));
+  }
+  return new Response(null, { status: 303, headers });
+}
+
 async function route(request, env) {
   const url = new URL(request.url);
+  if (url.pathname === "/admin/logout" && request.method === "POST") {
+    return handleLogout(await request.formData().catch(() => null));
+  }
   if (url.pathname === "/api/subscribe" && request.method === "POST") {
     return handleSubscribe(request, env);
   }

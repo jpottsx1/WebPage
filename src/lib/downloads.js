@@ -19,7 +19,7 @@ import { pageShell } from "./layout.js";
 import { checkPassword, requireSession, loginCookieHeader, loginFormHtml } from "./auth.js";
 import { authLocked, recordAuthFailure, AUTH_LOCKED_MESSAGE } from "./ratelimit.js";
 
-const SECTIONS = [
+export const SECTIONS = [
   { slug: "section-1", label: "Section 1", downloadEnv: "DOWNLOAD_PASSWORD_1", adminEnv: "ADMIN_PASSWORD_1" },
   { slug: "section-2", label: "Section 2", downloadEnv: "DOWNLOAD_PASSWORD_2", adminEnv: "ADMIN_PASSWORD_2" },
   { slug: "section-3", label: "Section 3", downloadEnv: "DOWNLOAD_PASSWORD_3", adminEnv: "ADMIN_PASSWORD_3" },
@@ -246,7 +246,7 @@ export async function handleDownloadsRequest(request, env, url) {
       ${rows}
       <p><a href="/downloads/${section.slug}">View the public page &rarr;</a></p>
     `;
-    return html(pageShell({ title: `Admin — ${section.label}`, noindex: true, bodyHtml }));
+    return html(pageShell({ title: `Admin — ${section.label}`, noindex: true, signOut: `/admin/${section.slug}`, bodyHtml }));
   }
 
   return null;

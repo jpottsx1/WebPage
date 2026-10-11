@@ -286,7 +286,7 @@ export async function handleBlogRequest(request, env, url) {
     const post = await env.DB.prepare("SELECT * FROM posts WHERE id = ?").bind(m[1]).first();
     if (!post) return null;
     const tags = await tagsForPosts(env, [post.id]);
-    return html(pageShell({ title: `Edit — ${post.title}`, noindex: true, bodyHtml: renderEditForm(post, tags.get(post.id), await getImageAlt(env, post.id)) }));
+    return html(pageShell({ title: `Edit — ${post.title}`, noindex: true, signOut: "/admin/blog", bodyHtml: renderEditForm(post, tags.get(post.id), await getImageAlt(env, post.id)) }));
   }
 
   if (m && request.method === "POST") {
@@ -389,7 +389,7 @@ export async function handleBlogRequest(request, env, url) {
       <h2>Existing Posts</h2>
       ${rows}
     `;
-    return html(pageShell({ title: "Admin — Blog", noindex: true, bodyHtml }));
+    return html(pageShell({ title: "Admin — Blog", noindex: true, signOut: "/admin/blog", bodyHtml }));
   }
 
   // ---- posts with one tag ----

@@ -287,7 +287,7 @@ async function renderAdmin(env, { notice = "", error = "", subject = "", body = 
     <h2>Subscribers (${count})</h2>
     ${subRows}
   `;
-  return html(pageShell({ title: "Admin — Newsletter", noindex: true, bodyHtml }), error ? 400 : 200);
+  return html(pageShell({ title: "Admin — Newsletter", noindex: true, signOut: "/admin/newsletter", bodyHtml }), error ? 400 : 200);
 }
 
 export async function handleNewsletterRequest(request, env, url) {
