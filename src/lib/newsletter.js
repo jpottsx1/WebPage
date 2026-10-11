@@ -10,6 +10,13 @@
  *   GET   /admin/newsletter                  — subscribers, compose, history
  *   GET   /admin/newsletter/subscribers.csv  — export
  *   POST  /admin/newsletter/remove           — remove one subscriber
+ *   POST  /admin/newsletter/archive          — add an issue to, or take it out of, the archive
+ *
+ *   GET   /newsletter                        — public archive of past issues
+ *   GET   /newsletter/:id                    — one past issue
+ *
+ * Issues are only public if they're in newsletter_public: off by default,
+ * because the newsletter carries early chapters meant for subscribers.
  *   POST  /admin/newsletter/send             — send a test or send to everyone
  *
  * The admin pages share the blog admin login (ADMIN_PASSWORD_BLOG).
@@ -20,7 +27,8 @@
  */
 
 import { escapeHtml, formatDate } from "./util.js";
-import { pageShell } from "./layout.js";
+import { excerpt, subscribeBoxHtml } from "./blog.js";
+import { pageShell, notFoundPage } from "./layout.js";
 import { requireSession, loginFormHtml } from "./auth.js";
 
 const ADMIN_AREA = "admin-blog";
@@ -203,15 +211,86 @@ async function handleSend(request, env) {
   }
 
   if (sent) {
+    const id = crypto.randomUUID();
     await env.DB
       .prepare("INSERT INTO newsletters (id, subject, body_html, sent_at, recipient_count) VALUES (?, ?, ?, ?, ?)")
-      .bind(crypto.randomUUID(), subject, body, new Date().toISOString(), sent)
+      .bind(id, subject, body, new Date().toISOString(), sent)
       .run();
+    if (form.get("archive")) await setArchived(env, id, true);
   }
   if (error) {
     return fail(`Sending stopped after ${sent} of ${subs.length} subscribers: ${error}. The first ${sent} got it; don't resend to everyone.`);
   }
   return redirect(`/admin/newsletter?sent=${sent}`);
+}
+
+// ---- the public archive ----
+
+async function setArchived(env, id, archived) {
+  if (archived) {
+    await env.DB.prepare("INSERT OR IGNORE INTO newsletter_public (newsletter_id) VALUES (?)").bind(id).run();
+  } else {
+    await env.DB.prepare("DELETE FROM newsletter_public WHERE newsletter_id = ?").bind(id).run();
+  }
+}
+
+// What a reader of the archive sees in place of {{name}}.
+function archiveBody(bodyHtml) {
+  return bodyHtml.replace(/\{\{\s*name\s*\}\}/g, "friend");
+}
+
+async function renderArchive(env) {
+  const { results } = await env.DB
+    .prepare("SELECT n.id, n.subject, n.body_html, n.sent_at FROM newsletters n JOIN newsletter_public p ON p.newsletter_id = n.id ORDER BY n.sent_at DESC")
+    .all();
+  const list = results.length
+    ? `<ul class="post-list">${results
+        .map(
+          (n) => `
+    <li>
+      <a href="/newsletter/${n.id}">${escapeHtml(n.subject)}</a>
+      <span class="post-date">${formatDate(n.sent_at)}</span>
+      <p class="post-excerpt">${escapeHtml(excerpt(archiveBody(n.body_html)))}</p>
+    </li>`
+        )
+        .join("")}</ul>`
+    : `<p class="empty">No past issues are in the archive yet.</p>`;
+  return html(
+    pageShell({
+      title: "Newsletter archive — Jeffrey Potts",
+      description: "Past issues of Jeffrey Potts's newsletter: news, writing and the stories behind the books.",
+      canonical: "/newsletter",
+      bodyHtml: `
+      <p class="eyebrow">Newsletter</p>
+      <h1>Past issues</h1>
+      <p>Some of what goes out to subscribers. Early chapters stay with the people on the list &mdash; <a href="/#signup">sign up</a> to get those too.</p>
+      ${list}
+      ${subscribeBoxHtml()}`,
+    })
+  );
+}
+
+async function renderIssue(env, id) {
+  const n = await env.DB
+    .prepare("SELECT n.id, n.subject, n.body_html, n.sent_at FROM newsletters n JOIN newsletter_public p ON p.newsletter_id = n.id WHERE n.id = ?")
+    .bind(id)
+    .first();
+  if (!n) return notFoundPage();
+  const body = archiveBody(n.body_html);
+  return html(
+    pageShell({
+      title: `${n.subject} — Jeffrey Potts's newsletter`,
+      description: excerpt(body, 160),
+      canonical: `/newsletter/${n.id}`,
+      ogType: "article",
+      bodyHtml: `
+      <p class="eyebrow">Newsletter &middot; ${formatDate(n.sent_at)}</p>
+      <h1>${escapeHtml(n.subject)}</h1>
+      <div class="post-body">${body}</div>
+      ${subscribeBoxHtml()}
+      <p style="margin-top:40px;"><a href="/newsletter">&larr; All past issues</a></p>`,
+    })
+  );
 }
 
 // ---- admin pages ----
@@ -225,7 +304,9 @@ function csvCell(v) {
 async function renderAdmin(env, { notice = "", error = "", subject = "", body = "" } = {}) {
   const { results: subs } = await env.DB.prepare("SELECT email, name, created_at FROM subscribers ORDER BY created_at DESC").all();
   const { results: history } = await env.DB
-    .prepare("SELECT subject, sent_at, recipient_count FROM newsletters ORDER BY sent_at DESC LIMIT 20")
+    .prepare(
+      "SELECT n.id, n.subject, n.sent_at, n.recipient_count, p.newsletter_id IS NOT NULL AS archived FROM newsletters n LEFT JOIN newsletter_public p ON p.newsletter_id = n.id ORDER BY n.sent_at DESC LIMIT 20"
+    )
     .all();
 
   const warnings = [];
@@ -254,7 +335,15 @@ async function renderAdmin(env, { notice = "", error = "", subject = "", body = 
 
   const historyRows = history.length
     ? `<ul class="post-admin-list">${history
-        .map((h) => `<li><div><strong>${escapeHtml(h.subject)}</strong><div class="meta">${formatDate(h.sent_at)} &middot; ${h.recipient_count} recipient${h.recipient_count === 1 ? "" : "s"}</div></div></li>`)
+        .map(
+          (h) => `<li><div><strong>${escapeHtml(h.subject)}</strong><div class="meta">${formatDate(h.sent_at)} &middot; ${h.recipient_count} recipient${h.recipient_count === 1 ? "" : "s"} &middot; ${
+            h.archived ? `in the <a href="/newsletter/${h.id}">public archive</a>` : "not in the archive"
+          }</div></div>
+          <div class="row-actions"><form method="POST" action="/admin/newsletter/archive">
+            <input type="hidden" name="id" value="${escapeHtml(h.id)}" /><input type="hidden" name="archived" value="${h.archived ? "0" : "1"}" />
+            <button type="submit" class="btn btn-ghost">${h.archived ? "Remove from archive" : "Add to archive"}</button>
+          </form></div></li>`
+        )
         .join("")}</ul>`
     : `<p class="empty">Nothing sent yet.</p>`;
 
@@ -274,6 +363,8 @@ async function renderAdmin(env, { notice = "", error = "", subject = "", body = 
       <label for="body">Body (HTML)</label>
       <textarea id="body" name="body" required>${escapeHtml(body)}</textarea>
       <span class="field-hint">Write <code>{{name}}</code> to insert each reader&rsquo;s first name. The unsubscribe footer is added automatically.</span>
+      <label class="checkbox"><input type="checkbox" name="archive" value="1" /> Add to the public archive at <a href="/newsletter">/newsletter</a></label>
+      <span class="field-hint">Leave this off for issues that carry subscriber-only early chapters. You can change it later under Sent.</span>
       <div class="row-actions">
         <button type="submit" name="mode" value="test" class="btn btn-ghost">Send me a test</button>
         <button type="submit" name="mode" value="all" class="btn btn-primary"
@@ -295,6 +386,14 @@ export async function handleNewsletterRequest(request, env, url) {
 
   if (path === "/api/unsubscribe" && (request.method === "GET" || request.method === "POST")) {
     return handleUnsubscribe(request, env, url);
+  }
+
+  if ((path === "/newsletter" || path === "/newsletter/") && request.method === "GET") {
+    return renderArchive(env);
+  }
+  const issue = path.match(/^\/newsletter\/([a-f0-9-]{36})\/?$/);
+  if (issue && request.method === "GET") {
+    return renderIssue(env, issue[1]);
   }
 
   if (path !== "/admin/newsletter" && !path.startsWith("/admin/newsletter/")) return null;
@@ -326,6 +425,13 @@ export async function handleNewsletterRequest(request, env, url) {
         "Cache-Control": "no-store",
       },
     });
+  }
+
+  if (path === "/admin/newsletter/archive" && request.method === "POST") {
+    const form = await request.formData();
+    const id = (form.get("id") || "").toString();
+    if (id) await setArchived(env, id, form.get("archived") === "1");
+    return redirect("/admin/newsletter");
   }
 
   if (path === "/admin/newsletter/remove" && request.method === "POST") {
