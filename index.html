@@ -217,6 +217,9 @@
   }
   .book-body { padding: 22px 22px 26px; display: flex; flex-direction: column; flex: 1; }
   .book-body h3 { margin: 0 0 4px; font-size: 1.28rem; color: var(--heading); }
+  .book-body h3 a { color: inherit; text-decoration: none; }
+  .book-body h3 a:hover, .book-body h3 a:focus-visible { text-decoration: underline; }
+  .book-cover > a { display: block; }
   .book-tag { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.16em; color: var(--rust-text); font-weight: 700; font-family: 'Helvetica Neue', Arial, sans-serif; margin-bottom: 12px; }
   .book-body p { margin: 0 0 20px; font-size: 0.98rem; color: var(--ink); flex: 1; }
   .book-actions { display: flex; flex-direction: column; gap: 10px; }
@@ -346,16 +349,16 @@
     <div class="section-head center">
       <p class="eyebrow">The Books</p>
       <h2>True stories worth your evening</h2>
-      <p>Available in paperback and ebook. Tap a cover to read more or buy your copy on Amazon.</p>
+      <p>Available in paperback and ebook. Tap a cover to read more, or buy your copy on Amazon.</p>
     </div>
     <div class="books">
 
       <!-- Finding Tina -->
       <article class="book">
-        <div class="book-cover"><span class="badge badge-2027">Look for release in 2027</span><picture><source type="image/webp" srcset="Books/finding-tina.webp" /><img src="Books/Finding%20tina.jpg" alt="Finding Tina book cover" width="768" height="1152" loading="lazy" decoding="async" /></picture></div>
+        <div class="book-cover"><span class="badge badge-2027">Look for release in 2027</span><a href="/books/finding-tina" tabindex="-1" aria-hidden="true"><picture><source type="image/webp" srcset="Books/finding-tina.webp" /><img src="Books/Finding%20tina.jpg" alt="Finding Tina book cover" width="768" height="1152" loading="lazy" decoding="async" /></picture></a></div>
         <div class="book-body">
           <div class="book-tag">Memoir · Love</div>
-          <h3>Finding Tina</h3>
+          <h3><a href="/books/finding-tina">Finding Tina</a></h3>
           <p>The dating journey that led to the one that mattered most. A wry, tender tour through the near-misses, wrong turns, and Palermo doorways of a life spent looking for love — until it finally looked back.</p>
           <div class="book-actions">
             <!-- TODO: replace href with the real Amazon product URL -->
@@ -367,10 +370,10 @@
 
       <!-- I Only Cook Supper -->
       <article class="book">
-        <div class="book-cover"><span class="badge badge-2027">Look for release in 2027</span><picture><source type="image/webp" srcset="Books/i-only-cook-supper.webp" /><img src="Books/I%20only%20Cook%20Supper.jpg" alt="I Only Cook Supper book cover" width="768" height="1152" loading="lazy" decoding="async" /></picture></div>
+        <div class="book-cover"><span class="badge badge-2027">Look for release in 2027</span><a href="/books/i-only-cook-supper" tabindex="-1" aria-hidden="true"><picture><source type="image/webp" srcset="Books/i-only-cook-supper.webp" /><img src="Books/I%20only%20Cook%20Supper.jpg" alt="I Only Cook Supper book cover" width="768" height="1152" loading="lazy" decoding="async" /></picture></a></div>
         <div class="book-body">
           <div class="book-tag">Memoir · Cookbook</div>
-          <h3>I Only Cook Supper</h3>
+          <h3><a href="/books/i-only-cook-supper">I Only Cook Supper</a></h3>
           <p>A memoir of food, family, and the key around my neck. Part memoir, part cookbook, all true — the story of a mill-town boyhood told through the meals that held a family together, and the one rule his mother said only once.</p>
           <div class="book-actions">
             <!-- TODO: replace href with the real Amazon product URL -->
@@ -382,10 +385,10 @@
 
       <!-- Most Days -->
       <article class="book">
-        <div class="book-cover"><span class="badge badge-soon">Coming Soon</span><picture><source type="image/webp" srcset="Books/most-days.webp" /><img src="Books/most-days.jpg" alt="Most Days book cover" width="800" height="1200" loading="lazy" decoding="async" /></picture></div>
+        <div class="book-cover"><span class="badge badge-soon">Coming Soon</span><a href="/books/most-days" tabindex="-1" aria-hidden="true"><picture><source type="image/webp" srcset="Books/most-days.webp" /><img src="Books/most-days.jpg" alt="Most Days book cover" width="800" height="1200" loading="lazy" decoding="async" /></picture></a></div>
         <div class="book-body">
           <div class="book-tag">Memoir · Mental Health</div>
-          <h3>Most Days</h3>
+          <h3><a href="/books/most-days">Most Days</a></h3>
           <p>A memoir of bipolar disorder. A thirty-year fight, a thousand bad days, and the stubborn act of still getting up. Not recovered, not cured — still here, and telling the truth about what that costs and what it's worth.</p>
           <div class="book-actions">
             <!-- TODO: replace href with the real Amazon product URL -->
@@ -397,10 +400,10 @@
 
       <!-- Eating Stories -->
       <article class="book">
-        <div class="book-cover"><picture><source type="image/webp" srcset="Books/eating-stories.webp" /><img src="Books/Eating%20Stories.jpg" alt="Eating Stories book cover" width="938" height="1500" loading="lazy" decoding="async" /></picture></div>
+        <div class="book-cover"><a href="/books/eating-stories" tabindex="-1" aria-hidden="true"><picture><source type="image/webp" srcset="Books/eating-stories.webp" /><img src="Books/Eating%20Stories.jpg" alt="Eating Stories book cover" width="938" height="1500" loading="lazy" decoding="async" /></picture></a></div>
         <div class="book-body">
           <div class="book-tag">Memoir · Cookbook</div>
-          <h3>Eating Stories</h3>
+          <h3><a href="/books/eating-stories">Eating Stories</a></h3>
           <p>&ldquo;Eating Stories&rdquo; is not just a cookbook; it&rsquo;s a testament to the power of food in connecting us to our past, celebrating our present, and paving the way for future experiences. Join Jeffrey Potts on this captivating journey where food, storytelling, and life beautifully converge, inviting you to create your own tales with each delicious bite.</p>
           <div class="book-actions">
             <a class="btn btn-primary" href="https://www.amazon.ca/Eating-Stories-Family-Folklore-Fabulation-ebook/dp/B0CPL1CR5S" target="_blank" rel="noopener">Buy on Amazon</a>
@@ -410,10 +413,10 @@
 
       <!-- Curling In Cornwall -->
       <article class="book">
-        <div class="book-cover"><picture><source type="image/webp" srcset="Books/curling-in-cornwall.webp" /><img src="Books/Curling%20In%20Cornwall.jpg" alt="Curling In Cornwall book cover" width="960" height="1500" loading="lazy" decoding="async" /></picture></div>
+        <div class="book-cover"><a href="/books/curling-in-cornwall" tabindex="-1" aria-hidden="true"><picture><source type="image/webp" srcset="Books/curling-in-cornwall.webp" /><img src="Books/Curling%20In%20Cornwall.jpg" alt="Curling In Cornwall book cover" width="960" height="1500" loading="lazy" decoding="async" /></picture></a></div>
         <div class="book-body">
           <div class="book-tag">History · Sport</div>
-          <h3>Curling In Cornwall</h3>
+          <h3><a href="/books/curling-in-cornwall">Curling In Cornwall</a></h3>
           <p>The narrative and historical journey of curling in and around Cornwall traces its origins back to the era when the area was first settled by Loyalists, and continues through to the sport&rsquo;s temporary decline in 1908.</p>
           <div class="book-actions">
             <a class="btn btn-primary" href="https://www.amazon.ca/Curling-Cornwall-1784-Early-Years-ebook/dp/B0CW1K8W84" target="_blank" rel="noopener">Buy on Amazon</a>
@@ -733,59 +736,9 @@
     });
   });
 
-  // ---- Localize Amazon links to the visitor's country -----
-  // Kindle e-book ASINs are the same across every Amazon
-  // marketplace, so we can safely swap only the domain and keep
-  // the product path. Placeholder buttons become a local search.
-  (function () {
-    var DOMAINS = {
-      US:'amazon.com', CA:'amazon.ca', GB:'amazon.co.uk', IE:'amazon.co.uk',
-      AU:'amazon.com.au', NZ:'amazon.com.au', DE:'amazon.de', AT:'amazon.de',
-      CH:'amazon.de', FR:'amazon.fr', IT:'amazon.it', ES:'amazon.es',
-      NL:'amazon.nl', SE:'amazon.se', PL:'amazon.pl', JP:'amazon.co.jp',
-      IN:'amazon.in', MX:'amazon.com.mx', BR:'amazon.com.br', SG:'amazon.sg',
-      AE:'amazon.ae', SA:'amazon.sa', TR:'amazon.com.tr', EG:'amazon.eg'
-    };
-
-    function region() {
-      try {
-        var loc = (navigator.languages && navigator.languages[0]) || navigator.language || '';
-        var m = loc.match(/[-_]([A-Za-z]{2})$/);
-        if (m) return m[1].toUpperCase();
-      } catch (e) {}
-      try {
-        var tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
-        if (/Toronto|Vancouver|Edmonton|Winnipeg|Halifax|Montreal|Regina|St_Johns/.test(tz)) return 'CA';
-        if (/London|Belfast|Dublin/.test(tz)) return 'GB';
-        if (/Australia/.test(tz)) return 'AU';
-        if (/Paris/.test(tz)) return 'FR';
-        if (/Berlin|Zurich|Vienna/.test(tz)) return 'DE';
-        if (/Madrid/.test(tz)) return 'ES';
-        if (/Rome/.test(tz)) return 'IT';
-        if (/Amsterdam/.test(tz)) return 'NL';
-        if (/Tokyo/.test(tz)) return 'JP';
-        if (/Kolkata|Calcutta/.test(tz)) return 'IN';
-        if (/Mexico/.test(tz)) return 'MX';
-        if (/Sao_Paulo/.test(tz)) return 'BR';
-        if (/New_York|Chicago|Denver|Los_Angeles|Phoenix|Anchorage/.test(tz)) return 'US';
-      } catch (e) {}
-      return 'US';
-    }
-
-    var domain = DOMAINS[region()] || 'amazon.com';
-
-    Array.prototype.forEach.call(document.querySelectorAll('a[href]'), function (a) {
-      var href = a.getAttribute('href');
-      if (a.hasAttribute('data-amazon') && (href === '#' || !href)) {
-        a.setAttribute('href', 'https://www.' + domain + '/s?k=' + encodeURIComponent(a.getAttribute('data-amazon')));
-      } else if (/^https?:\/\/(www\.)?amazon\.[a-z.]+\//i.test(href)) {
-        a.setAttribute('href', href.replace(/amazon\.[a-z.]+/i, domain));
-      }
-    });
-  })();
-
   document.getElementById('year').textContent = new Date().getFullYear();
 </script>
+<script src="/amazon-links.js" defer></script>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileLoad&render=explicit" async defer></script>
 </body>
 </html>

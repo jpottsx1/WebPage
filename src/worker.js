@@ -44,6 +44,7 @@ import { logoutCookieHeader, requireSession } from "./lib/auth.js";
 import { withErrorAlerts, healthCheck, scheduledHealthCheck, sendAlert } from "./lib/alerts.js";
 import { confirmUrl, checkConfirmLink, addPending, confirmPending, clearExpiredPending, CONFIRM_DAYS } from "./lib/optin.js";
 import { pageShell } from "./lib/layout.js";
+import { handleBooksRequest } from "./lib/books.js";
 import { handleBlogRequest } from "./lib/blog.js";
 import { handleSeoRequest } from "./lib/seo.js";
 import { handleXmlRpcRequest } from "./lib/xmlrpc.js";
@@ -404,6 +405,8 @@ async function route(request, env) {
   }
   const newsletterResponse = await handleNewsletterRequest(request, env, url);
   if (newsletterResponse) return newsletterResponse;
+  const booksResponse = handleBooksRequest(request, url);
+  if (booksResponse) return booksResponse;
   const seoResponse = await handleSeoRequest(request, env, url);
   if (seoResponse) return seoResponse;
   const xmlRpcResponse = await handleXmlRpcRequest(request, env, url, { blogName: "Jeffrey Potts", bucket: env.FILES });

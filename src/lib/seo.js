@@ -10,6 +10,7 @@ import { escapeHtml } from "./util.js";
 import { excerpt } from "./blog.js";
 import { nowIso, publishedSql } from "./publishing.js";
 import { absolutizeUrls } from "./postextras.js";
+import { BOOKS } from "./books.js";
 
 export const SITE_URL = "https://jeffreypotts.ca";
 
@@ -51,6 +52,8 @@ export async function handleSeoRequest(request, env, url) {
     const latest = posts.length ? isoDate(posts[0].updated_at || posts[0].created_at) : null;
     const entries = [
       { loc: `${SITE_URL}/` },
+      { loc: `${SITE_URL}/books/` },
+      ...BOOKS.map((b) => ({ loc: `${SITE_URL}/books/${b.slug}` })),
       { loc: `${SITE_URL}/blog/`, lastmod: latest },
       ...posts.map((p) => ({ loc: `${SITE_URL}/blog/${p.slug}`, lastmod: isoDate(p.updated_at || p.created_at) })),
       ...tags.map((t) => ({ loc: `${SITE_URL}/blog/tag/${t.slug}` })),
