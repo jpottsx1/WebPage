@@ -82,7 +82,7 @@ const BASE_STYLE = `
   .notice-msg { background: rgba(35,78,88,0.08); border: 1px solid var(--teal); color: var(--heading); padding: 12px 16px; font-family:'Helvetica Neue',Arial,sans-serif; font-size: 0.92rem; margin: 0 0 16px; max-width: 460px; }
   .error-msg { background: rgba(181,68,46,0.1); border: 1px solid var(--rust); color: var(--rust-text); padding: 12px 16px; font-family:'Helvetica Neue',Arial,sans-serif; font-size: 0.92rem; margin: 0 0 16px; max-width: 460px; }
 
-  /* lists (downloads + admin) */
+  /* admin lists */
   .file-list, .post-admin-list { list-style: none; padding: 0; margin: 20px 0; max-width: 620px; }
   .file-list li, .post-admin-list li {
     display: flex; justify-content: space-between; align-items: center; gap: 14px;
