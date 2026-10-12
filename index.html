@@ -644,7 +644,12 @@
         return { status: r.status, data: data };
       });
     }).then(function (res) {
-      if (res.status === 200 || res.status === 201) {
+      if (res.status === 202) {
+        msg.className = 'form-msg ok';
+        msg.textContent = 'Almost there, ' + first + ' — check your inbox for an email from me and click the link to confirm. ' +
+          '(If it isn’t there in a minute, look in spam.)';
+        form.reset();
+      } else if (res.status === 200 || res.status === 201) {
         msg.className = 'form-msg ok';
         msg.textContent = 'Welcome aboard, ' + first + ' — you’re on the list! ' +
           'Check your inbox for a welcome note. Thanks for reading. — Jeffrey';

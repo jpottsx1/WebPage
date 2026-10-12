@@ -95,3 +95,19 @@ CREATE TABLE IF NOT EXISTS post_drafts (
 CREATE TABLE IF NOT EXISTS newsletter_public (
   newsletter_id TEXT PRIMARY KEY
 );
+
+-- Double opt-in (src/lib/optin.js): sign-ups waiting for the confirmation
+-- link. Cleared after 7 days by the daily scheduled job.
+CREATE TABLE IF NOT EXISTS pending_subscribers (
+  email      TEXT PRIMARY KEY,
+  name       TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+
+-- Saved newsletter drafts (/admin/newsletter).
+CREATE TABLE IF NOT EXISTS email_drafts (
+  id         TEXT PRIMARY KEY,
+  subject    TEXT NOT NULL,
+  body_html  TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);

@@ -108,7 +108,10 @@ export function subscribeBoxHtml() {
               body: JSON.stringify({ name: name, email: email, "cf-turnstile-response": token }),
             });
             var data = await res.json().catch(function () { return {}; });
-            if (res.ok) {
+            if (res.status === 202) {
+              form.reset();
+              show("ok", "Almost there \u2014 check your inbox and click the link to confirm. (If it isn\u2019t there in a minute, look in spam.)");
+            } else if (res.ok) {
               form.reset();
               show("ok", "Welcome aboard, " + (name.split(/\\s+/)[0] || "friend") + " \u2014 you\u2019re on the list. Check your inbox for a welcome note.");
             } else if (res.status === 409) {

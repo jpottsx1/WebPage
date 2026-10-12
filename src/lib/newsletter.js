@@ -11,6 +11,9 @@
  *   GET   /admin/newsletter/subscribers.csv  — export
  *   POST  /admin/newsletter/remove           — remove one subscriber
  *   POST  /admin/newsletter/archive          — add an issue to, or take it out of, the archive
+ *   POST  /admin/newsletter/preview          — the email as readers will see it (new tab)
+ *   POST  /admin/newsletter/draft-delete     — delete a saved draft
+ *   Drafts are saved with the composer's Save draft button (email_drafts).
  *
  *   GET   /newsletter                        — public archive of past issues
  *   GET   /newsletter/:id                    — one past issue
@@ -168,8 +171,15 @@ async function handleSend(request, env) {
   const subject = (form.get("subject") || "").toString().trim();
   const body = (form.get("body") || "").toString().trim();
   const mode = (form.get("mode") || "").toString();
+  let draftId = (form.get("draft_id") || "").toString();
 
-  const fail = (msg) => renderAdmin(env, { error: msg, subject, body });
+  const fail = (msg) => renderAdmin(env, { error: msg, subject, body, draftId });
+
+  if (mode === "save") {
+    if (!subject && !body) return fail("There's nothing to save yet.");
+    draftId = await saveDraft(env, draftId, subject, body);
+    return renderAdmin(env, { notice: "Draft saved.", subject, body, draftId });
+  }
 
   if (!subject || !body) return fail("A subject and a body are both needed.");
   if (!env.RESEND_API_KEY || !env.FROM_EMAIL) return fail("RESEND_API_KEY and FROM_EMAIL must be set to send email.");
@@ -182,7 +192,7 @@ async function handleSend(request, env) {
     } catch (e) {
       return fail("Test send failed: " + e.message);
     }
-    return renderAdmin(env, { notice: `Test sent to ${env.NOTIFY_EMAIL}.`, subject, body });
+    return renderAdmin(env, { notice: `Test sent to ${env.NOTIFY_EMAIL}.`, subject, body, draftId });
   }
 
   if (mode !== "all") return fail("Unknown send mode.");
@@ -217,11 +227,51 @@ async function handleSend(request, env) {
       .bind(id, subject, body, new Date().toISOString(), sent)
       .run();
     if (form.get("archive")) await setArchived(env, id, true);
+    if (draftId) await deleteDraft(env, draftId);
   }
   if (error) {
     return fail(`Sending stopped after ${sent} of ${subs.length} subscribers: ${error}. The first ${sent} got it; don't resend to everyone.`);
   }
   return redirect(`/admin/newsletter?sent=${sent}`);
+}
+
+// ---- drafts and preview ----
+
+async function saveDraft(env, id, subject, body) {
+  const draftId = id || crypto.randomUUID();
+  await env.DB
+    .prepare(
+      "INSERT INTO email_drafts (id, subject, body_html, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET subject = excluded.subject, body_html = excluded.body_html, updated_at = excluded.updated_at"
+    )
+    .bind(draftId, subject, body, new Date().toISOString())
+    .run();
+  return draftId;
+}
+
+async function deleteDraft(env, id) {
+  await env.DB.prepare("DELETE FROM email_drafts WHERE id = ?").bind(id).run();
+}
+
+// The email exactly as it's sent, with "Reader" for {{name}} and a sample
+// unsubscribe link, inside a frame that says it's a preview.
+async function renderPreview(request, env) {
+  const form = await request.formData();
+  const subject = (form.get("subject") || "").toString().trim() || "(no subject)";
+  const body = (form.get("body") || "").toString();
+  const email = newsletterHtml(env, body, "Reader", "https://jeffreypotts.ca/api/unsubscribe?preview");
+  return html(`<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" /><title>Preview: ${escapeHtml(subject)}</title>
+<style>
+  body { margin: 0; background: #e9e6df; font-family: 'Helvetica Neue', Arial, sans-serif; }
+  .bar { background: #17343b; color: #ede3cf; padding: 12px 20px; font-size: 14px; }
+  .bar strong { color: #fff; }
+  .mail { background: #fff; max-width: 640px; margin: 24px auto; padding: 28px 32px; box-shadow: 0 2px 10px rgba(0,0,0,0.12); }
+  .meta { max-width: 640px; margin: 24px auto 0; font-size: 14px; color: #444; }
+</style></head><body>
+<div class="bar">Preview &mdash; not sent. <strong>{{name}}</strong> shows as &ldquo;Reader&rdquo;; each subscriber sees their own name and unsubscribe link.</div>
+<div class="meta"><strong>From:</strong> ${escapeHtml(env.FROM_EMAIL || "")}<br><strong>Subject:</strong> ${escapeHtml(subject)}</div>
+<div class="mail">${email}</div>
+</body></html>`);
 }
 
 // ---- the public archive ----
@@ -301,7 +351,8 @@ function csvCell(v) {
   return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
-async function renderAdmin(env, { notice = "", error = "", subject = "", body = "" } = {}) {
+async function renderAdmin(env, { notice = "", error = "", subject = "", body = "", draftId = "" } = {}) {
+  const { results: drafts } = await env.DB.prepare("SELECT id, subject, updated_at FROM email_drafts ORDER BY updated_at DESC").all();
   const { results: subs } = await env.DB.prepare("SELECT email, name, created_at FROM subscribers ORDER BY created_at DESC").all();
   const { results: history } = await env.DB
     .prepare(
@@ -356,8 +407,9 @@ async function renderAdmin(env, { notice = "", error = "", subject = "", body = 
     ${error ? `<p class="error-msg">${escapeHtml(error)}</p>` : ""}
     ${notice ? `<p class="notice-msg">${escapeHtml(notice)}</p>` : ""}
 
-    <h2>Write a newsletter</h2>
-    <form method="POST" action="/admin/newsletter/send" class="admin-form">
+    <h2>${draftId ? "Editing a draft" : "Write a newsletter"}</h2>
+    <form method="POST" action="/admin/newsletter/send" class="admin-form" id="composer">
+      <input type="hidden" name="draft_id" value="${escapeHtml(draftId)}" />
       <label for="subject">Subject</label>
       <input type="text" id="subject" name="subject" value="${escapeHtml(subject)}" required />
       <label for="body">Body (HTML)</label>
@@ -365,18 +417,47 @@ async function renderAdmin(env, { notice = "", error = "", subject = "", body = 
       <span class="field-hint">Write <code>{{name}}</code> to insert each reader&rsquo;s first name. The unsubscribe footer is added automatically.</span>
       <label class="checkbox"><input type="checkbox" name="archive" value="1" /> Add to the public archive at <a href="/newsletter">/newsletter</a></label>
       <span class="field-hint">Leave this off for issues that carry subscriber-only early chapters. You can change it later under Sent.</span>
-      <div class="row-actions">
+      <div class="row-actions" style="flex-wrap: wrap;">
+        <button type="submit" name="mode" value="save" class="btn btn-ghost">Save draft</button>
+        <button type="submit" formaction="/admin/newsletter/preview" formtarget="_blank" class="btn btn-ghost">Preview</button>
         <button type="submit" name="mode" value="test" class="btn btn-ghost">Send me a test</button>
         <button type="submit" name="mode" value="all" class="btn btn-primary"
           onclick="return confirm('Send this to all ${count} subscriber${count === 1 ? "" : "s"}?');">Send to ${count} subscriber${count === 1 ? "" : "s"}</button>
       </div>
     </form>
 
+    ${draftId ? `<p><a href="/admin/newsletter">Start a new newsletter instead</a></p>` : ""}
+
+    <h2>Drafts</h2>
+    ${drafts.length
+      ? `<ul class="post-admin-list">${drafts
+          .map(
+            (d) => `<li><div><strong>${escapeHtml(d.subject || "(no subject)")}</strong><div class="meta">saved ${formatDate(d.updated_at)}${d.id === draftId ? " &middot; open above" : ""}</div></div>
+          <div class="row-actions"><a class="btn btn-ghost" href="/admin/newsletter?draft=${d.id}">Edit</a>
+            <form method="POST" action="/admin/newsletter/draft-delete" onsubmit="return confirm('Delete this draft?');"><input type="hidden" name="id" value="${escapeHtml(d.id)}" /><button type="submit" class="btn btn-danger">Delete</button></form></div></li>`
+          )
+          .join("")}</ul>`
+      : `<p class="empty">No saved drafts.</p>`}
+
     <h2>Sent</h2>
     ${historyRows}
 
     <h2>Subscribers (${count})</h2>
     ${subRows}
+    <script>
+    (function () {
+      // Warn before leaving with unsaved changes in the composer.
+      var form = document.getElementById("composer");
+      var start = new FormData(form);
+      var dirty = function () {
+        var now = new FormData(form);
+        return now.get("subject") !== start.get("subject") || now.get("body") !== start.get("body");
+      };
+      var leaving = false;
+      form.addEventListener("submit", function (e) { if (!e.submitter || e.submitter.formTarget !== "_blank") leaving = true; });
+      window.addEventListener("beforeunload", function (e) { if (!leaving && dirty()) { e.preventDefault(); e.returnValue = ""; } });
+    })();
+    </script>
   `;
   return html(pageShell({ title: "Admin — Newsletter", noindex: true, signOut: "/admin/newsletter", bodyHtml }), error ? 400 : 200);
 }
@@ -412,6 +493,11 @@ export async function handleNewsletterRequest(request, env, url) {
 
   if ((path === "/admin/newsletter" || path === "/admin/newsletter/") && request.method === "GET") {
     const sent = url.searchParams.get("sent");
+    const draftParam = url.searchParams.get("draft");
+    if (draftParam) {
+      const d = await env.DB.prepare("SELECT id, subject, body_html FROM email_drafts WHERE id = ?").bind(draftParam).first();
+      if (d) return renderAdmin(env, { subject: d.subject, body: d.body_html, draftId: d.id });
+    }
     return renderAdmin(env, sent ? { notice: `Sent to ${sent} subscriber${sent === "1" ? "" : "s"}.` } : {});
   }
 
@@ -425,6 +511,17 @@ export async function handleNewsletterRequest(request, env, url) {
         "Cache-Control": "no-store",
       },
     });
+  }
+
+  if (path === "/admin/newsletter/preview" && request.method === "POST") {
+    return renderPreview(request, env);
+  }
+
+  if (path === "/admin/newsletter/draft-delete" && request.method === "POST") {
+    const form = await request.formData();
+    const id = (form.get("id") || "").toString();
+    if (id) await deleteDraft(env, id);
+    return redirect("/admin/newsletter");
   }
 
   if (path === "/admin/newsletter/archive" && request.method === "POST") {
