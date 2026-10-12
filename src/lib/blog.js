@@ -141,7 +141,30 @@ export function subscribeBoxHtml() {
         });
       })();
       </script>
-      <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onPostSubscribeTurnstileLoad&render=explicit" async defer></script>`;
+      <script>
+      // Load Turnstile when the box comes within 600px of the screen (or on a
+      // click into it), not with the page: its scripts are heavy on phones.
+      (function () {
+        var box = document.querySelector(".post-subscribe");
+        var started = false;
+        function load() {
+          if (started) return;
+          started = true;
+          var s = document.createElement("script");
+          s.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onPostSubscribeTurnstileLoad&render=explicit";
+          s.async = true;
+          document.head.appendChild(s);
+        }
+        // A book's release-alert form sits higher up and needs it sooner.
+        var watch = [box, document.getElementById("ba-form")].filter(Boolean);
+        watch.forEach(function (el) { el.addEventListener("focusin", load); });
+        if (!("IntersectionObserver" in window)) return load();
+        var io = new IntersectionObserver(function (entries) {
+          if (entries.some(function (e) { return e.isIntersecting; })) { io.disconnect(); load(); }
+        }, { rootMargin: "600px 0px" });
+        watch.forEach(function (el) { io.observe(el); });
+      })();
+      </script>`;
 }
 
 function tagLinks(tags) {

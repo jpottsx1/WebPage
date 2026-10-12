@@ -4,3 +4,13 @@ src
 SETUP.md
 schema.sql
 tools
+# Repository files, not pages
+README.md
+wrangler.jsonc
+.gitignore
+.assetsignore
+# Local only (never committed, listed so local dev doesn't serve or watch them)
+.dev.vars
+.wrangler
+.claude
+drafts
