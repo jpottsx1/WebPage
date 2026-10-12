@@ -417,7 +417,8 @@ export async function handleBlogRequest(request, env, url) {
     }
     const cookie = await loginCookieHeader(ADMIN_AREA, env.SESSION_SECRET);
     // Only same-site admin paths, so the login can't be used as an open redirect.
-    const target = next === "/admin/newsletter" ? next : "/admin/blog";
+    // Only known admin pages, so the login can't be used as an open redirect.
+    const target = ["/admin/newsletter", "/admin/book-alerts"].includes(next) ? next : "/admin/blog";
     return redirect(target, { "Set-Cookie": cookie });
   }
 
