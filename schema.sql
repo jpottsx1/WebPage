@@ -99,3 +99,23 @@ CREATE TABLE IF NOT EXISTS email_drafts (
   body_html  TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
+
+-- "Tell me when it's out" (src/lib/bookalerts.js): one row per person per
+-- book. confirmed_at is NULL until the confirmation link is used; unconfirmed
+-- rows are cleared after 7 days, and a book's rows once its email is sent.
+CREATE TABLE IF NOT EXISTS book_alerts (
+  email        TEXT NOT NULL,
+  book_slug    TEXT NOT NULL,
+  created_at   TEXT NOT NULL,
+  confirmed_at TEXT,
+  PRIMARY KEY (email, book_slug)
+);
+
+-- Release emails sent from /admin/book-alerts (history + double-send guard).
+CREATE TABLE IF NOT EXISTS book_alert_sends (
+  id              TEXT PRIMARY KEY,
+  book_slug       TEXT NOT NULL,
+  subject         TEXT NOT NULL,
+  sent_at         TEXT NOT NULL,
+  recipient_count INTEGER NOT NULL
+);

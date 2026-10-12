@@ -4,15 +4,17 @@
  *   GET /books/         — every book, linking to its page
  *   GET /books/<slug>   — cover, description, buy link and JSON-LD Book
  *
- * The home page's book cards link here. The data below is the single list
- * of books for these pages and the sitemap; the cards in index.html are
- * written out by hand, so a new book goes in both places.
+ * The data below is the one list of books: these pages, the sitemap, and the
+ * home page's book cards (homeCardsHtml, put into index.html by the Worker)
+ * all come from it. An upcoming book (no Amazon URL yet) gets a "Tell me when
+ * it's out" form; see src/lib/bookalerts.js for releasing one.
  */
 
 import { escapeHtml } from "./util.js";
 import { pageShell } from "./layout.js";
 import { subscribeBoxHtml } from "./blog.js";
 import { SITE_URL } from "./seo.js";
+import { bookAlertFormHtml } from "./bookalerts.js";
 
 // amazon: a product URL, or null while the book isn't out (the button then
 // becomes an Amazon search, localised by /amazon-links.js like the home page).
@@ -114,6 +116,13 @@ const STYLE = `<style>
   .book-grid { list-style: none; padding: 0; margin: 16px 0 40px; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 24px; }
   .book-grid a { text-decoration: none; color: var(--heading); font-weight: 600; }
   .book-grid span { display: block; margin-top: 10px; }
+  .book-alert { border-top: 3px solid var(--rust); background: var(--surface); padding: 22px 24px; margin: 28px 0 8px; }
+  .book-alert h2 { margin: 0 0 6px; font-size: 1.2rem; }
+  .book-alert p { margin: 0 0 14px; }
+  .book-alert label { display: block; font: 700 0.85rem/1.4 'Helvetica Neue', Arial, sans-serif; margin-bottom: 6px; }
+  .ba-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .ba-row input { flex: 1 1 220px; min-width: 0; padding: 10px 12px; font-size: 1rem; border: 1px solid var(--line); background: var(--input-bg); color: var(--ink); }
+  .book-alert .turnstile-slot { margin-top: 12px; }
   @media (max-width: 640px) {
     .book-page { grid-template-columns: 1fr; gap: 24px; }
     .book-page .cover { max-width: 260px; }
@@ -133,6 +142,38 @@ function gridHtml(books) {
   return `<ul class="book-grid">${books
     .map((b) => `<li><a href="/books/${b.slug}">${coverHtml(b, { lazy: true })}<span>${escapeHtml(b.title)}</span></a></li>`)
     .join("")}</ul>`;
+}
+
+/** The home page's book cards, in the markup and classes index.html styles. */
+export function homeCardsHtml() {
+  return BOOKS.map((b) => {
+    const badge = b.badge ? `<span class="badge badge-${b.badge[1]}">${escapeHtml(b.badge[0])}</span>` : "";
+    const primary = b.amazon
+      ? `<a class="btn btn-primary" href="${escapeHtml(b.amazon)}" target="_blank" rel="noopener">Buy on Amazon</a>`
+      : `<a class="btn btn-primary" href="/books/${b.slug}#alert">Tell me when it&rsquo;s out</a>`;
+    return `
+      <article class="book">
+        <div class="book-cover">${badge}<a href="/books/${b.slug}" tabindex="-1" aria-hidden="true">${coverHtml(b, { lazy: true })}</a></div>
+        <div class="book-body">
+          <div class="book-tag">${escapeHtml(b.tag)}</div>
+          <h3><a href="/books/${b.slug}">${escapeHtml(b.title)}</a></h3>
+          <p>${escapeHtml(b.description)}</p>
+          <div class="book-actions">
+            ${primary}
+            ${b.sample ? `<a class="btn btn-ghost" href="#sample">Read a Sample</a>` : ""}
+          </div>
+        </div>
+      </article>`;
+  }).join("\n");
+}
+
+/** The home page with its book cards filled in from BOOKS. */
+export async function homePage(request, env) {
+  const res = await env.ASSETS.fetch(request);
+  if (!res.ok || !(res.headers.get("Content-Type") || "").includes("text/html")) return res;
+  return new HTMLRewriter()
+    .on("div.books[data-books]", { element: (el) => el.setInnerContent(homeCardsHtml(), { html: true }) })
+    .transform(res);
 }
 
 const AMAZON_SCRIPT = `<script src="/amazon-links.js" defer></script>`;
@@ -159,6 +200,7 @@ function bookPage(b) {
           <a class="btn btn-primary" href="${escapeHtml(buyHref(b))}"${b.amazon ? "" : ` data-amazon="${escapeHtml(b.search)}"`} target="_blank" rel="noopener">${buyLabel}</a>
           ${b.sample ? `<a class="btn btn-ghost" href="/#sample">Read a Sample</a>` : ""}
         </div>
+        ${b.amazon ? "" : bookAlertFormHtml(b)}
       </div>
     </article>
     ${subscribeBoxHtml()}

@@ -8,7 +8,10 @@
   },
   "assets": {
     "directory": ".",
-    "binding": "ASSETS"
+    "binding": "ASSETS",
+    // The home page goes through the Worker, which fills in its book cards
+    // from src/lib/books.js. Everything else is served as a file first.
+    "run_worker_first": ["/"]
   },
   // Plain settings live here, not in the dashboard: a deploy removes
   // dashboard variables that aren't listed in this file. Secrets are

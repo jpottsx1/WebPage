@@ -15,6 +15,8 @@
  *     subscriber list / newsletter sender, see src/lib/newsletter.js
  *   /admin/* — the blog CMS (src/lib/blog.js) and newsletter (src/lib/newsletter.js)
  *   /blog/* — dynamic blog, see src/lib/blog.js
+ *   /books/* and the home page's book cards — src/lib/books.js
+ *   /api/book-alert*, /admin/book-alerts — "tell me when it's out", src/lib/bookalerts.js
  *   /robots.txt, /sitemap.xml, /blog/feed.xml — see src/lib/seo.js
  *   POST /xmlrpc, GET /rsd.xml — posting to the blog from MarsEdit,
  *     see src/lib/xmlrpc.js
@@ -44,7 +46,8 @@ import { logoutCookieHeader, requireSession } from "./lib/auth.js";
 import { withErrorAlerts, healthCheck, scheduledHealthCheck, sendAlert } from "./lib/alerts.js";
 import { confirmUrl, checkConfirmLink, addPending, confirmPending, clearExpiredPending, CONFIRM_DAYS } from "./lib/optin.js";
 import { pageShell } from "./lib/layout.js";
-import { handleBooksRequest } from "./lib/books.js";
+import { handleBooksRequest, homePage } from "./lib/books.js";
+import { handleBookAlertRequest, clearExpiredBookAlerts } from "./lib/bookalerts.js";
 import { handleBlogRequest } from "./lib/blog.js";
 import { handleSeoRequest } from "./lib/seo.js";
 import { handleXmlRpcRequest } from "./lib/xmlrpc.js";
@@ -310,7 +313,7 @@ const ALERTS = {
   ],
   tables: [
     "subscribers", "pending_subscribers", "email_drafts", "newsletters", "newsletter_public", "posts", "post_tags", "post_drafts",
-    "post_image_alt", "rate_events",
+    "post_image_alt", "rate_events", "book_alerts", "book_alert_sends",
   ],
 };
 
@@ -324,6 +327,7 @@ export default {
   async scheduled(event, env, ctx) {
     ctx.waitUntil(scheduledHealthCheck(env, ALERTS));
     ctx.waitUntil(clearExpiredPending(env));
+    ctx.waitUntil(clearExpiredBookAlerts(env));
   },
 };
 
@@ -403,6 +407,11 @@ async function route(request, env) {
   if (url.pathname === "/api/contact" && request.method === "POST") {
     return handleContact(request, env);
   }
+  if (url.pathname === "/" && (request.method === "GET" || request.method === "HEAD")) {
+    return homePage(request, env);
+  }
+  const bookAlertResponse = await handleBookAlertRequest(request, env, url);
+  if (bookAlertResponse) return bookAlertResponse;
   const newsletterResponse = await handleNewsletterRequest(request, env, url);
   if (newsletterResponse) return newsletterResponse;
   const booksResponse = handleBooksRequest(request, url);
