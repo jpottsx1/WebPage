@@ -49,12 +49,23 @@ export async function uniqueSlug(env, title, excludeId) {
   }
 }
 
+// Plain text out of HTML: callers escape it again, so entities become characters.
+const ENTITIES = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " ", rsquo: "\u2019", lsquo: "\u2018", rdquo: "\u201d", ldquo: "\u201c", mdash: "\u2014", ndash: "\u2013", hellip: "\u2026", middot: "\u00b7", eacute: "\u00e9" };
+function decodeEntity(whole, code) {
+  if (code[0] === "#") {
+    const n = code[1] === "x" || code[1] === "X" ? parseInt(code.slice(2), 16) : parseInt(code.slice(1), 10);
+    return n > 0 && n < 0x110000 ? String.fromCodePoint(n) : whole;
+  }
+  return ENTITIES[code.toLowerCase()] ?? whole;
+}
+
 export function excerpt(bodyHtml, len = 160) {
   // Block-level tags become spaces so paragraphs don't run together; inline
   // tags (<a>, <b>…) vanish so they don't leave a gap before punctuation.
   const text = bodyHtml
     .replace(/<\/?(p|br|div|h[1-6]|li|ul|ol|blockquote|figure|figcaption|img|hr|pre|table|tr|td|th)\b[^>]*>/gi, " ")
     .replace(/<[^>]+>/g, "")
+    .replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, decodeEntity)
     .replace(/\s+/g, " ")
     .trim();
   return text.length > len ? text.slice(0, len).trim() + "…" : text;
@@ -89,6 +100,8 @@ export function subscribeBoxHtml() {
         var widgetId;
         window.onPostSubscribeTurnstileLoad = function () {
           widgetId = window.turnstile.render("#ps-turnstile", { sitekey: "${TURNSTILE_SITEKEY}", action: "subscribe" });
+          // Other widgets on the page (a book's release alert) queue here.
+          (window.turnstileReady || []).forEach(function (f) { f(); });
         };
         function show(state, text) { msg.dataset.state = state; msg.textContent = text; }
         form.addEventListener("submit", async function (e) {
@@ -162,6 +175,61 @@ async function renderPublicList(env) {
     return `<p class="empty">No posts yet — <a href="/#signup">sign up for the newsletter</a> and you'll be the first to know when something new goes up.</p>`;
   }
   return renderPostList(env, results);
+}
+
+// ---- search ----
+
+const SEARCH_MAX = 100;
+
+function searchFormHtml(q = "") {
+  return `<form class="blog-search" role="search" action="/blog/search" method="get">
+      <label for="blog-q" class="visually-hidden">Search the blog</label>
+      <input type="search" id="blog-q" name="q" value="${escapeHtml(q)}" placeholder="Search the blog" maxlength="${SEARCH_MAX}" />
+      <button type="submit" class="btn btn-primary">Search</button>
+    </form>`;
+}
+
+// Published posts whose title, text or tags contain every word searched for.
+async function searchPosts(env, q) {
+  // Split on anything that isn't a letter or digit, so "don't" finds don&rsquo;t.
+  const words = q.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter((w) => w.length >= 2).slice(0, 6);
+  if (!words.length) return [];
+  const like = (w) => `%${w.replace(/[\\%_]/g, (c) => "\\" + c)}%`;
+  const clauses = words.map(
+    () => `(lower(title) LIKE ? ESCAPE '\\' OR lower(body_html) LIKE ? ESCAPE '\\' OR id IN (SELECT post_id FROM post_tags WHERE lower(name) LIKE ? ESCAPE '\\'))`
+  );
+  const { results } = await env.DB
+    .prepare(`SELECT id, slug, title, body_html, created_at FROM posts WHERE ${publishedSql()} AND ${clauses.join(" AND ")} ORDER BY created_at DESC LIMIT 50`)
+    .bind(nowIso(), ...words.flatMap((w) => [like(w), like(w), like(w)]))
+    .all();
+  // Words found only inside HTML markup (a link's address, a class name) don't count.
+  const tags = await tagsForPosts(env, results.map((p) => p.id));
+  return results.filter((p) => {
+    const tagNames = (tags.get(p.id) || []).map((t) => t.name).join(" ");
+    const text = `${p.title} ${tagNames} ${p.body_html.replace(/<[^>]+>/g, " ")}`.toLowerCase();
+    return words.every((w) => text.includes(w));
+  });
+}
+
+async function renderSearch(env, q) {
+  q = q.trim().slice(0, SEARCH_MAX);
+  let body = searchFormHtml(q);
+  if (/[\p{L}\p{N}]{2}/u.test(q)) {
+    const posts = await searchPosts(env, q);
+    const n = posts.length;
+    body += n
+      ? `<p class="post-date">${n} post${n === 1 ? "" : "s"} matching &ldquo;${escapeHtml(q)}&rdquo;</p>${await renderPostList(env, posts)}`
+      : `<p class="empty">Nothing matches &ldquo;${escapeHtml(q)}&rdquo;. Try fewer or different words, or <a href="/blog/">browse every post</a>.</p>`;
+  } else if (q) {
+    body += `<p class="empty">Type at least two letters.</p>`;
+  }
+  return html(
+    pageShell({
+      title: q ? `“${q}” — Search — Jeffrey Potts` : "Search the blog — Jeffrey Potts",
+      noindex: true,
+      bodyHtml: `<p class="eyebrow"><a href="/blog/">The Blog</a></p><h1>Search</h1>${body}`,
+    })
+  );
 }
 
 const TAGS_FIELD_HINT = `<span class="field-hint">Separate tags with commas, e.g. <em>writing, research</em>.</span>`;
@@ -292,9 +360,13 @@ export async function handleBlogRequest(request, env, url) {
         title: "Blog — Jeffrey Potts",
         description: "Notes from the desk of author Jeffrey Potts: writing, food, family and getting back up.",
         canonical: "/blog/",
-        bodyHtml: `<p class="eyebrow">The Blog</p><h1>Notes from the desk</h1>${list}`,
+        bodyHtml: `<p class="eyebrow">The Blog</p><h1>Notes from the desk</h1>${searchFormHtml()}${list}`,
       })
     );
+  }
+
+  if ((path === "/blog/search" || path === "/blog/search/") && (request.method === "GET" || request.method === "HEAD")) {
+    return renderSearch(env, url.searchParams.get("q") || "");
   }
 
   // ---- post image ----
@@ -345,7 +417,8 @@ export async function handleBlogRequest(request, env, url) {
     }
     const cookie = await loginCookieHeader(ADMIN_AREA, env.SESSION_SECRET);
     // Only same-site admin paths, so the login can't be used as an open redirect.
-    const target = next === "/admin/newsletter" ? next : "/admin/blog";
+    // Only known admin pages, so the login can't be used as an open redirect.
+    const target = ["/admin/newsletter", "/admin/book-alerts"].includes(next) ? next : "/admin/blog";
     return redirect(target, { "Set-Cookie": cookie });
   }
 

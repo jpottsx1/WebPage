@@ -93,6 +93,9 @@ const BASE_STYLE = `
   .row-actions form { margin: 0; }
 
   /* blog */
+  .blog-search { display: flex; gap: 10px; flex-wrap: wrap; margin: 0 0 28px; }
+  .blog-search input { flex: 1 1 220px; min-width: 0; padding: 10px 12px; font-size: 1rem; border: 1px solid var(--line); background: var(--input-bg); color: var(--ink); }
+  .visually-hidden { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .post-list { list-style: none; padding: 0; margin: 0; }
   .post-list li { padding: 22px 0; border-bottom: 1px solid var(--line); }
   .post-list li:first-child { padding-top: 0; }

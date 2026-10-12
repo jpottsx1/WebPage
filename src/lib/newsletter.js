@@ -402,7 +402,7 @@ async function renderAdmin(env, { notice = "", error = "", subject = "", body = 
   const bodyHtml = `
     <p class="eyebrow">Admin</p>
     <h1>Newsletter</h1>
-    <p><a href="/admin/blog">Blog posts</a> &middot; <a href="/admin/newsletter/subscribers.csv">Export subscribers (CSV)</a></p>
+    <p><a href="/admin/blog">Blog posts</a> &middot; <a href="/admin/book-alerts">Book alerts</a> &middot; <a href="/admin/newsletter/subscribers.csv">Export subscribers (CSV)</a></p>
     ${warnings.map((w) => `<p class="error-msg">${escapeHtml(w)}</p>`).join("")}
     ${error ? `<p class="error-msg">${escapeHtml(error)}</p>` : ""}
     ${notice ? `<p class="notice-msg">${escapeHtml(notice)}</p>` : ""}
