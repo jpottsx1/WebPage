@@ -3,8 +3,6 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<!-- The sign-up and contact forms load Turnstile from here. -->
-<link rel="preconnect" href="https://challenges.cloudflare.com" />
 <!-- The portrait is the largest thing on screen: fetch it before the long stylesheet is parsed. -->
 <link rel="preload" as="image" type="image/webp" imagesrcset="jeffreypotts-480.webp 480w, jeffreypotts-720.webp 720w, jeffreypotts.webp 864w" imagesizes="(max-width: 820px) 320px, 420px" fetchpriority="high" />
 <title>Jeffrey Potts — Author of Finding Tina, I Only Cook Supper &amp; Most Days</title>
@@ -524,6 +522,29 @@
     turnstileIds.contact = window.turnstile.render('#contactTurnstile', { sitekey: TURNSTILE_SITEKEY, action: 'contact' });
   };
 
+  // Turnstile's scripts are heavy, and both forms are far down the page:
+  // load them when a form comes within 600px of the screen, or the moment
+  // someone clicks into one, not with the page. Loading them up front held
+  // back the portrait's paint on phones.
+  (function () {
+    var started = false;
+    function load() {
+      if (started) return;
+      started = true;
+      var s = document.createElement('script');
+      s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileLoad&render=explicit';
+      s.async = true;
+      document.head.appendChild(s);
+    }
+    var forms = [document.getElementById('signupForm'), document.getElementById('contactForm')].filter(Boolean);
+    forms.forEach(function (f) { f.addEventListener('focusin', load); });
+    if (!('IntersectionObserver' in window)) return load();
+    var io = new IntersectionObserver(function (entries) {
+      if (entries.some(function (e) { return e.isIntersecting; })) { io.disconnect(); load(); }
+    }, { rootMargin: '600px 0px' });
+    forms.forEach(function (f) { io.observe(f); });
+  })();
+
   function turnstileToken(action) {
     return (window.turnstile && turnstileIds[action] !== undefined)
       ? window.turnstile.getResponse(turnstileIds[action]) || ''
@@ -665,6 +686,5 @@
   document.getElementById('year').textContent = new Date().getFullYear();
 </script>
 <script src="/amazon-links.js" defer></script>
-<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileLoad&render=explicit" async defer></script>
 </body>
 </html>
