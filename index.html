@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <!-- The sign-up and contact forms load Turnstile from here. -->
 <link rel="preconnect" href="https://challenges.cloudflare.com" />
+<!-- The portrait is the largest thing on screen: fetch it before the long stylesheet is parsed. -->
+<link rel="preload" as="image" type="image/webp" imagesrcset="jeffreypotts-480.webp 480w, jeffreypotts-720.webp 720w, jeffreypotts.webp 864w" imagesizes="(max-width: 820px) 320px, 420px" fetchpriority="high" />
 <title>Jeffrey Potts — Author of Finding Tina, I Only Cook Supper &amp; Most Days</title>
 <link rel="EditURI" type="application/rsd+xml" title="RSD" href="/rsd.xml" />
 <meta name="description" content="Jeffrey Potts, author of Finding Tina, I Only Cook Supper, and Most Days. Read a sample, buy the books, and sign up for pre-release writing and the newsletter." />
