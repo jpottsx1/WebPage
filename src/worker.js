@@ -2,7 +2,8 @@
  * Cloudflare Worker — entry point
  * ------------------------------------------------------------------
  * Serves the static site and handles:
- *   POST /api/subscribe — newsletter signups
+ *   POST /api/subscribe — newsletter signups (double opt-in: emails a
+ *     confirmation link; GET/POST /api/confirm adds them to the list)
  *     1. Validates the submitted name + email
  *     2. Stores the subscriber in a D1 database (duplicate-safe)
  *     3. Sends a welcome email to the subscriber via Resend
@@ -45,6 +46,7 @@
 import { handleDownloadsRequest, SECTIONS } from "./lib/downloads.js";
 import { logoutCookieHeader, requireSession } from "./lib/auth.js";
 import { withErrorAlerts, healthCheck, scheduledHealthCheck, sendAlert } from "./lib/alerts.js";
+import { confirmUrl, checkConfirmLink, addPending, confirmPending, clearExpiredPending, CONFIRM_DAYS } from "./lib/optin.js";
 import { pageShell } from "./lib/layout.js";
 import { handleBlogRequest } from "./lib/blog.js";
 import { handleSeoRequest } from "./lib/seo.js";
@@ -108,49 +110,74 @@ async function handleSubscribe(request, env) {
     return json(500, { error: "Could not read the subscriber list." });
   }
 
-  // ---- store the subscriber ----
-  const createdAt = new Date().toISOString();
+  // ---- double opt-in: wait for the link in the confirmation email ----
+  if (!env.RESEND_API_KEY || !env.FROM_EMAIL || !env.SESSION_SECRET) {
+    return json(500, { error: "Signups aren't set up yet. Please try again later." });
+  }
   try {
-    await env.DB
-      .prepare("INSERT INTO subscribers (email, name, created_at) VALUES (?, ?, ?)")
-      .bind(email, name, createdAt)
-      .run();
+    await addPending(env, email, name);
+    const link = await confirmUrl("https://jeffreypotts.ca", env.SESSION_SECRET, email);
+    await sendEmail(env, {
+      to: email,
+      subject: "Please confirm your subscription",
+      html: confirmHtml(name.split(/\s+/)[0] || "friend", link),
+    });
   } catch (e) {
-    // Unique-constraint race → treat as duplicate; anything else → 500
-    if (String(e && e.message).toUpperCase().includes("UNIQUE")) {
-      return json(409, { error: "already subscribed" });
-    }
-    return json(500, { error: "Could not save your signup. Please try again." });
+    return json(500, { error: "Couldn't send the confirmation email. Please try again in a moment." });
   }
+  return json(202, { ok: true, pending: true });
+}
 
-  // ---- send the welcome email (non-blocking for the signup) ----
+// Adds a confirmed subscriber's welcome email and the author's notification.
+async function welcomeNewSubscriber(env, email, name, createdAt) {
   const firstName = name.split(/\s+/)[0] || "friend";
-  if (env.RESEND_API_KEY && env.FROM_EMAIL) {
-    try {
-      const unsubUrl = await unsubscribeUrl(env, email);
-      await sendEmail(env, {
-        to: email,
-        subject: "Welcome to the list",
-        html: welcomeHtml(env, firstName, unsubUrl),
-        headers: unsubscribeHeaders(unsubUrl),
-      });
-    } catch (e) {
-      // Subscriber is already saved; don't fail the request over email delivery.
-    }
-
-    // ---- optional: notify the author ----
-    if (env.NOTIFY_EMAIL) {
-      try {
-        await sendEmail(env, {
-          to: env.NOTIFY_EMAIL,
-          subject: "New newsletter signup",
-          html: `<p>New subscriber:</p><p><strong>${escapeHtml(name)}</strong><br>${escapeHtml(email)}<br>${createdAt}</p>`,
-        });
-      } catch (e) { /* ignore */ }
-    }
+  try {
+    const unsubUrl = await unsubscribeUrl(env, email);
+    await sendEmail(env, {
+      to: email,
+      subject: "Welcome to the list",
+      html: welcomeHtml(env, firstName, unsubUrl),
+      headers: unsubscribeHeaders(unsubUrl),
+    });
+  } catch (e) {
+    // They're on the list either way.
   }
+  if (env.NOTIFY_EMAIL) {
+    try {
+      await sendEmail(env, {
+        to: env.NOTIFY_EMAIL,
+        subject: "New newsletter signup",
+        html: `<p>New subscriber (confirmed):</p><p><strong>${escapeHtml(name)}</strong><br>${escapeHtml(email)}<br>${createdAt}</p>`,
+      });
+    } catch (e) { /* ignore */ }
+  }
+}
 
-  return json(201, { ok: true });
+// GET shows a Confirm button; the button's POST joins the list. Mail scanners
+// open links (GET), so confirming on GET would let them confirm anyone.
+async function handleConfirm(request, env, url) {
+  const page = (heading, body, status = 200) =>
+    new Response(pageShell({ title: "Newsletter — Jeffrey Potts", noindex: true, bodyHtml: `<p class="eyebrow">Newsletter</p><h1>${heading}</h1>${body}` }), {
+      status,
+      headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" },
+    });
+  const email = await checkConfirmLink(url, env.SESSION_SECRET);
+  if (!email) {
+    return page("That link has expired.", `<p>Confirmation links last ${CONFIRM_DAYS} days. <a href="/#signup">Sign up again</a> and I&rsquo;ll send a fresh one.</p>`, 400);
+  }
+  if (request.method !== "POST") {
+    return page(
+      "One last step.",
+      `<p>Confirm that <strong>${escapeHtml(email)}</strong> should get the newsletter.</p>
+      <form method="POST" action="${escapeHtml(url.pathname + url.search)}"><button type="submit" class="btn btn-primary">Yes, sign me up</button></form>`
+    );
+  }
+  const result = await confirmPending(env, email);
+  if (result.status === "missing") {
+    return page("That link has expired.", `<p><a href="/#signup">Sign up again</a> and I&rsquo;ll send a fresh one.</p>`, 400);
+  }
+  if (result.status === "confirmed") await welcomeNewSubscriber(env, email, result.name, result.createdAt);
+  return page("You&rsquo;re on the list.", `<p>Thanks for confirming. ${result.status === "confirmed" ? "A welcome note is on its way to your inbox." : "You were already subscribed, so there&rsquo;s nothing more to do."}</p><p><a href="/">Back to the site</a> &middot; <a href="/blog/">Read the blog</a></p>`);
 }
 
 async function handleContact(request, env) {
@@ -229,6 +256,17 @@ async function sendEmail(env, { to, subject, html, replyTo, headers }) {
   return res;
 }
 
+function confirmHtml(firstName, link) {
+  return `
+  <div style="font-family: Georgia, 'Times New Roman', serif; color:#2a2622; max-width:560px; margin:0 auto; line-height:1.6;">
+    <h1 style="font-family:Arial,Helvetica,sans-serif; color:#234e58; font-size:22px;">One click to finish, ${escapeHtml(firstName)}.</h1>
+    <p>Someone (hopefully you) asked to get my newsletter at this address. Confirm it and you&rsquo;re on the list:</p>
+    <p style="margin:28px 0;"><a href="${escapeHtml(link)}" style="background:#b5442e; color:#fff; padding:12px 22px; text-decoration:none; font-family:Arial,Helvetica,sans-serif; font-weight:bold;">Confirm my subscription</a></p>
+    <p>The link works for ${CONFIRM_DAYS} days. If you didn&rsquo;t sign up, ignore this email and you won&rsquo;t hear from me again.</p>
+    <p style="margin-top:28px;">&mdash; Jeffrey Potts</p>
+  </div>`;
+}
+
 function welcomeHtml(env, firstName, unsubUrl) {
   return `
   <div style="font-family: Georgia, 'Times New Roman', serif; color:#2a2622; max-width:560px; margin:0 auto; line-height:1.6;">
@@ -274,7 +312,7 @@ const ALERTS = {
     "TURNSTILE_SECRET", "TURNSTILE_HOSTNAMES",
   ],
   tables: [
-    "subscribers", "newsletters", "newsletter_public", "posts", "post_tags", "post_drafts",
+    "subscribers", "pending_subscribers", "email_drafts", "newsletters", "newsletter_public", "posts", "post_tags", "post_drafts",
     "post_image_alt", "download_files", "rate_events",
   ],
 };
@@ -288,6 +326,7 @@ export default {
   // Daily at 12:00 UTC (wrangler.jsonc triggers): email only if something's wrong.
   async scheduled(event, env, ctx) {
     ctx.waitUntil(scheduledHealthCheck(env, ALERTS));
+    ctx.waitUntil(clearExpiredPending(env));
   },
 };
 
@@ -352,6 +391,9 @@ async function route(request, env) {
   const url = new URL(request.url);
   if (isCrossSiteAdminPost(request, url)) {
     return new Response("Forbidden: cross-site form submission.", { status: 403, headers: { "Content-Type": "text/plain; charset=utf-8" } });
+  }
+  if (url.pathname === "/api/confirm" && (request.method === "GET" || request.method === "POST")) {
+    return handleConfirm(request, env, url);
   }
   if (url.pathname === "/admin/health" || url.pathname === "/admin/health/test") {
     return handleHealth(request, env, url);
