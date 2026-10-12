@@ -77,16 +77,6 @@ Cloudflare dashboard → **D1 → jeffreypotts-newsletter → Console** → past
 run:
 
 ```sql
-CREATE TABLE IF NOT EXISTS download_files (
-  id          TEXT PRIMARY KEY,
-  section     TEXT NOT NULL,
-  filename    TEXT NOT NULL,
-  r2_key      TEXT NOT NULL,
-  size_bytes  INTEGER NOT NULL,
-  uploaded_at TEXT NOT NULL
-);
-CREATE INDEX IF NOT EXISTS idx_download_files_section ON download_files (section, uploaded_at);
-
 CREATE TABLE IF NOT EXISTS posts (
   id          TEXT PRIMARY KEY,
   slug        TEXT NOT NULL UNIQUE,
@@ -109,19 +99,10 @@ these, each type **Encrypt (secret)**, then **Save and deploy**:
 
 | Variable | Purpose |
 |---|---|
-| `DOWNLOAD_PASSWORD_1` | Visitor password for Section 1's download page |
-| `DOWNLOAD_PASSWORD_2` | Visitor password for Section 2's download page |
-| `DOWNLOAD_PASSWORD_3` | Visitor password for Section 3's download page |
-| `ADMIN_PASSWORD_1` | Admin password to upload/delete files in Section 1 |
-| `ADMIN_PASSWORD_2` | Admin password to upload/delete files in Section 2 |
-| `ADMIN_PASSWORD_3` | Admin password to upload/delete files in Section 3 |
 | `ADMIN_PASSWORD_BLOG` | Admin password for the blog CMS (add/edit/delete posts) |
 | `SESSION_SECRET` | Any long random string (e.g. from a password generator) — signs login-session cookies. Not a password you use yourself; just needs to be unpredictable. |
 
-Pick strong, unique values for each — whoever holds `DOWNLOAD_PASSWORD_1`
-can only see Section 1's files; `ADMIN_PASSWORD_1` is a separate, more
-sensitive password that also lets someone delete those files, so keep
-admin passwords to yourself.
+Pick strong, unique values, and keep the admin password to yourself.
 
 ## 8. Deploy and test
 
@@ -176,23 +157,6 @@ each existing post.
 
 The post body field accepts raw HTML (bold, links, paragraphs, etc.) —
 whatever you type is rendered as-is on the post page.
-
-## Using the download sections
-
-Each of the three sections has two URLs:
-
-- `jeffreypotts.ca/downloads/section-1` (and `section-2`, `section-3`) —
-  the page you share with visitors. They enter `DOWNLOAD_PASSWORD_N` to see
-  and download the files.
-- `jeffreypotts.ca/admin/section-1` (etc.) — where you log in with
-  `ADMIN_PASSWORD_N` to upload new files or delete old ones. Changes show
-  up on the visitor page immediately.
-
-Neither URL is linked from the site's navigation — they're only reachable
-if you share the link directly, matching how you'd hand out a password.
-The section labels ("Section 1", "Section 2", "Section 3") are placeholders
-in `src/lib/downloads.js` — tell me what each section is actually for and
-I'll rename them in one edit.
 
 ## Posting from MarsEdit
 

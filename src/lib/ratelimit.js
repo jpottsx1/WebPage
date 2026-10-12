@@ -5,7 +5,7 @@
  * that address can't try again until the oldest failure falls out of the
  * window. Only failures are recorded. The check runs before the password is
  * compared, so a locked-out guesser can't learn whether a guess was right.
- * One count covers every password on the site (admin, downloads, MarsEdit).
+ * One count covers every password on the site (the admin and MarsEdit).
  *
  * Public forms: a few submissions per IP address per 10 minutes.
  *

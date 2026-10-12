@@ -13,8 +13,7 @@
  *     2. Emails the message to the author via Resend, reply-to the sender
  *   GET/POST /api/unsubscribe, /admin/newsletter — unsubscribe links and the
  *     subscriber list / newsletter sender, see src/lib/newsletter.js
- *   /downloads/*, /admin/* — password-gated file downloads + blog CMS,
- *     see src/lib/downloads.js and src/lib/blog.js
+ *   /admin/* — the blog CMS (src/lib/blog.js) and newsletter (src/lib/newsletter.js)
  *   /blog/* — dynamic blog, see src/lib/blog.js
  *   /robots.txt, /sitemap.xml, /blog/feed.xml — see src/lib/seo.js
  *   POST /xmlrpc, GET /rsd.xml — posting to the blog from MarsEdit,
@@ -29,8 +28,6 @@
  *   FROM_EMAIL      — e.g. "Jeffrey Potts <me@jeffreypotts.ca>"
  *   NOTIFY_EMAIL    — where new-signup alerts and contact messages go
  *                     (required for /api/contact, optional for signups)
- *   DOWNLOAD_PASSWORD_1/2/3 — visitor passwords for each download section
- *   ADMIN_PASSWORD_1/2/3    — admin passwords for each section's file manager
  *   ADMIN_PASSWORD_BLOG     — admin password for the blog CMS
  *   SESSION_SECRET          — random string used to sign login-session cookies
  *   BLOG_APP_USER           — username MarsEdit signs in with
@@ -43,7 +40,6 @@
  * See SETUP.md for the one-time setup steps.
  */
 
-import { handleDownloadsRequest, SECTIONS } from "./lib/downloads.js";
 import { logoutCookieHeader, requireSession } from "./lib/auth.js";
 import { withErrorAlerts, healthCheck, scheduledHealthCheck, sendAlert } from "./lib/alerts.js";
 import { confirmUrl, checkConfirmLink, addPending, confirmPending, clearExpiredPending, CONFIRM_DAYS } from "./lib/optin.js";
@@ -313,7 +309,7 @@ const ALERTS = {
   ],
   tables: [
     "subscribers", "pending_subscribers", "email_drafts", "newsletters", "newsletter_public", "posts", "post_tags", "post_drafts",
-    "post_image_alt", "download_files", "rate_events",
+    "post_image_alt", "rate_events",
   ],
 };
 
@@ -358,17 +354,16 @@ async function handleHealth(request, env, url) {
   });
 }
 
-// Signs out of every admin area (blog and newsletter, and the three section
-// file managers) and returns to the login of the page the button was on.
-// Visitor download sessions are left alone. Sessions are signed cookies with
-// no server-side store, so this signs out this browser only.
+// Signs out of the admin (the blog and newsletter share one session) and
+// returns to the login of the page the button was on. Sessions are signed
+// cookies with no server-side store, so this signs out this browser only.
 function handleLogout(form) {
-  const allowed = ["/admin/blog", "/admin/newsletter", ...SECTIONS.map((s) => `/admin/${s.slug}`)];
   const next = (form && form.get("next")) || "";
-  const headers = new Headers({ Location: allowed.includes(next) ? next : "/admin/blog", "Cache-Control": "no-store" });
-  for (const area of ["admin-blog", ...SECTIONS.map((s) => `admin-${s.slug}`)]) {
-    headers.append("Set-Cookie", logoutCookieHeader(area));
-  }
+  const headers = new Headers({
+    Location: ["/admin/blog", "/admin/newsletter"].includes(next) ? next : "/admin/blog",
+    "Cache-Control": "no-store",
+  });
+  headers.append("Set-Cookie", logoutCookieHeader("admin-blog"));
   return new Response(null, { status: 303, headers });
 }
 
@@ -413,8 +408,6 @@ async function route(request, env) {
   if (seoResponse) return seoResponse;
   const xmlRpcResponse = await handleXmlRpcRequest(request, env, url, { blogName: "Jeffrey Potts", bucket: env.FILES });
   if (xmlRpcResponse) return xmlRpcResponse;
-  const downloadsResponse = await handleDownloadsRequest(request, env, url);
-  if (downloadsResponse) return downloadsResponse;
   const blogResponse = await handleBlogRequest(request, env, url);
   if (blogResponse) return blogResponse;
   const asset = await env.ASSETS.fetch(request);

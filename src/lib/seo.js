@@ -30,7 +30,7 @@ export async function handleSeoRequest(request, env, url) {
 
   if (path === "/robots.txt") {
     return new Response(
-      `User-agent: *\nDisallow: /admin/\nDisallow: /downloads/\nDisallow: /api/\n\nSitemap: ${SITE_URL}/sitemap.xml\n`,
+      `User-agent: *\nDisallow: /admin/\nDisallow: /api/\n\nSitemap: ${SITE_URL}/sitemap.xml\n`,
       { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=3600" } }
     );
   }
