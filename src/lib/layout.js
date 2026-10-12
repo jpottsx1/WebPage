@@ -202,7 +202,7 @@ export function notFoundPage() {
     <p>It may have moved, or the link may have a typo. Try one of these instead:</p>
     <ul>
       <li><a href="/">Home</a></li>
-      <li><a href="/#books">The books</a></li>
+      <li><a href="/books/">The books</a></li>
       <li><a href="/blog/">The blog</a></li>
       <li><a href="/#contact">Get in touch</a></li>
     </ul>`,
