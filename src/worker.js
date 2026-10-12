@@ -43,7 +43,8 @@
  */
 
 import { logoutCookieHeader, requireSession } from "./lib/auth.js";
-import { withErrorAlerts, healthCheck, scheduledHealthCheck, sendAlert } from "./lib/alerts.js";
+import { withErrorAlerts, healthCheck, scheduledHealthCheck, sendAlert, checkOtherSite } from "./lib/alerts.js";
+import { handlePressRequest } from "./lib/press.js";
 import { confirmUrl, checkConfirmLink, addPending, confirmPending, clearExpiredPending, CONFIRM_DAYS } from "./lib/optin.js";
 import { pageShell } from "./lib/layout.js";
 import { handleBooksRequest, homePage } from "./lib/books.js";
@@ -317,14 +318,27 @@ const ALERTS = {
   ],
 };
 
+const HOURLY_CRON = "17 * * * *";
+
 const handle = withErrorAlerts((request, env) => route(request, env), ALERTS);
 
 export default {
   async fetch(request, env, ctx) {
+    // HEAD gets exactly what GET would, without the body: the routes are
+    // written for GET, and crawlers and link checkers ask with HEAD.
+    if (request.method === "HEAD") {
+      const res = await handle(new Request(request, { method: "GET" }), env, ctx);
+      return withSecurityHeaders(new Response(null, res));
+    }
     return withSecurityHeaders(await handle(request, env, ctx));
   },
-  // Daily at 12:00 UTC (wrangler.jsonc triggers): email only if something's wrong.
+  // Hourly: is sgeulai.com up? Daily at 12:00 UTC: this site's own health
+  // check. Both email only if something's wrong (wrangler.jsonc triggers).
   async scheduled(event, env, ctx) {
+    if (event.cron === HOURLY_CRON) {
+      ctx.waitUntil(checkOtherSite(env, ALERTS, ["https://sgeulai.com/", "https://sgeulai.com/blog/"]));
+      return;
+    }
     ctx.waitUntil(scheduledHealthCheck(env, ALERTS));
     ctx.waitUntil(clearExpiredPending(env));
     ctx.waitUntil(clearExpiredBookAlerts(env));
@@ -414,6 +428,8 @@ async function route(request, env) {
   if (bookAlertResponse) return bookAlertResponse;
   const newsletterResponse = await handleNewsletterRequest(request, env, url);
   if (newsletterResponse) return newsletterResponse;
+  const pressResponse = handlePressRequest(request, url);
+  if (pressResponse) return pressResponse;
   const booksResponse = handleBooksRequest(request, url);
   if (booksResponse) return booksResponse;
   const seoResponse = await handleSeoRequest(request, env, url);
