@@ -11,7 +11,7 @@
 
 import { escapeHtml } from "./util.js";
 import { pageShell } from "./layout.js";
-import { BOOKS } from "./books.js";
+import { BOOKS, coverSrcset, COVER_SIZES } from "./books.js";
 import PRESS from "../data/press.json";
 
 const KIT = "/press/jeffrey-potts-press-kit.zip";
@@ -61,7 +61,7 @@ export function handlePressRequest(request, url) {
     <section class="press-section" aria-labelledby="photo">
       <h2 id="photo">Photograph</h2>
       <div class="press-photo">
-        <picture><source type="image/webp" srcset="${h.webp}" /><img src="${h.jpg}" alt="Photograph of Jeffrey Potts" width="${h.width}" height="${h.height}" loading="lazy" decoding="async" /></picture>
+        <picture><source type="image/webp" srcset="${h.webp}" sizes="220px" /><img src="${h.jpg}" alt="Photograph of Jeffrey Potts" width="${h.width}" height="${h.height}" loading="lazy" decoding="async" /></picture>
         <div>
           <p><a href="${h.jpg}" download>Download the headshot (JPG, ${h.width} &times; ${h.height})</a></p>
           <p class="meta">For a larger file, get in touch.</p>
@@ -73,7 +73,7 @@ export function handlePressRequest(request, url) {
       <h2 id="covers">The books</h2>
       <ul class="press-covers">${BOOKS.map(
         (b) => `<li>
-          <a href="/books/${b.slug}"><picture><source type="image/webp" srcset="${b.webp}" /><img src="${b.jpg}" alt="${escapeHtml(b.title)} book cover" width="${b.width}" height="${b.height}" loading="lazy" decoding="async" /></picture></a>
+          <a href="/books/${b.slug}"><picture><source type="image/webp" srcset="${coverSrcset(b)}" sizes="${COVER_SIZES.grid}" /><img src="${b.jpg}" alt="${escapeHtml(b.title)} book cover" width="${b.width}" height="${b.height}" loading="lazy" decoding="async" /></picture></a>
           <strong>${escapeHtml(b.fullTitle || b.title)}</strong>
           <span class="meta">${escapeHtml(b.tag)} &middot; ${escapeHtml(coverStatus(b))}</span>
           <a href="${b.jpg}" download>Download cover</a>
