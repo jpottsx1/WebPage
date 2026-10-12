@@ -8,16 +8,17 @@ const BASE_STYLE = `
     --teal-dark:  #17343b;
     --gold:       #c9a24b;
     --gold-soft:  #d8b36a;
+    --gold-text:  #e6cc94;           /* gold for text on teal: 4.8:1 or better */
     --rust:       #b5442e;
     --ink:        #2a2622;
-    --muted:      #6f6a5c;
+    --muted:      #625d50;           /* 5.1:1 on cream (WCAG AA) */
     --line:       rgba(42,38,34,0.14);
     /* Roles. Light values are the palette above; dark mode swaps them. */
     --bg:           var(--cream);
     --surface:      var(--paper);
     --heading:      var(--teal-dark);
     --link:         var(--teal);
-    --rust-text:    var(--rust);
+    --rust-text:    #a33c28;           /* rust for text: 5.1:1 on cream; --rust stays for fills */
     --on-accent:    #f5efe1;
     --input-bg:     #fff;
     color-scheme: light dark;

@@ -140,8 +140,21 @@ const STYLE = `<style>
   }
 </style>`;
 
-function coverHtml(b, { lazy }) {
-  return `<picture><source type="image/webp" srcset="${b.webp}" /><img src="${b.jpg}" alt="${escapeHtml(b.title)} book cover" width="${b.width}" height="${b.height}"${lazy ? ' loading="lazy"' : ""} decoding="async" /></picture>`;
+// Displayed widths, for the browser to pick from the -320/-480/-640 copies
+// (tools/make-image-sizes.sh makes them).
+export const COVER_SIZES = {
+  page: "(max-width: 640px) 260px, 300px",
+  card: "(max-width: 860px) min(416px, calc(100vw - 92px)), 290px",
+  grid: "(max-width: 640px) 45vw, 200px",
+};
+
+export function coverSrcset(b) {
+  const base = b.webp.replace(/\.webp$/, "");
+  return `${base}-320.webp 320w, ${base}-480.webp 480w, ${base}-640.webp 640w, ${b.webp} ${b.width}w`;
+}
+
+function coverHtml(b, { lazy, sizes, priority = false }) {
+  return `<picture><source type="image/webp" srcset="${coverSrcset(b)}" sizes="${sizes}" /><img src="${b.jpg}" alt="${escapeHtml(b.title)} book cover" width="${b.width}" height="${b.height}"${lazy ? ' loading="lazy"' : ""}${priority ? ' fetchpriority="high"' : ""} decoding="async" /></picture>`;
 }
 
 function buyHref(b) {
@@ -151,7 +164,7 @@ function buyHref(b) {
 
 function gridHtml(books) {
   return `<ul class="book-grid">${books
-    .map((b) => `<li><a href="/books/${b.slug}">${coverHtml(b, { lazy: true })}<span>${escapeHtml(b.title)}</span></a></li>`)
+    .map((b) => `<li><a href="/books/${b.slug}">${coverHtml(b, { lazy: true, sizes: COVER_SIZES.grid })}<span>${escapeHtml(b.title)}</span></a></li>`)
     .join("")}</ul>`;
 }
 
@@ -164,7 +177,7 @@ export function homeCardsHtml() {
       : `<a class="btn btn-primary" href="/books/${b.slug}#alert">Tell me when it&rsquo;s out</a>`;
     return `
       <article class="book">
-        <div class="book-cover">${badge}<a href="/books/${b.slug}" tabindex="-1" aria-hidden="true">${coverHtml(b, { lazy: true })}</a></div>
+        <div class="book-cover">${badge}<a href="/books/${b.slug}" tabindex="-1" aria-hidden="true">${coverHtml(b, { lazy: true, sizes: COVER_SIZES.card })}</a></div>
         <div class="book-body">
           <div class="book-tag">${escapeHtml(b.tag)}</div>
           <h3><a href="/books/${b.slug}">${escapeHtml(b.title)}</a></h3>
@@ -227,7 +240,7 @@ function bookPage(b) {
   const bodyHtml = `${STYLE}
     <p class="eyebrow"><a href="/books/">The books</a></p>
     <article class="book-page">
-      <div class="cover">${b.badge ? `<span class="book-badge${b.badge[1] === "soon" ? " soon" : ""}">${escapeHtml(b.badge[0])}</span>` : ""}${coverHtml(b, { lazy: false })}</div>
+      <div class="cover">${b.badge ? `<span class="book-badge${b.badge[1] === "soon" ? " soon" : ""}">${escapeHtml(b.badge[0])}</span>` : ""}${coverHtml(b, { lazy: false, sizes: COVER_SIZES.page, priority: true })}</div>
       <div>
         <p class="book-tag">${escapeHtml(b.tag)}</p>
         <h1>${escapeHtml(b.fullTitle || b.title)}</h1>
