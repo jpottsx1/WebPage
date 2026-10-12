@@ -15,11 +15,14 @@ import { pageShell } from "./layout.js";
 import { subscribeBoxHtml } from "./blog.js";
 import { SITE_URL } from "./seo.js";
 import { bookAlertFormHtml } from "./bookalerts.js";
+import PRESS from "../data/press.json";
 
 // amazon: a product URL, or null while the book isn't out (the button then
 // becomes an Amazon search, localised by /amazon-links.js like the home page).
 // badge: [text, "soon" | "2027"] for unreleased books.
 // sample: true when the home page's "Read a Sample" section has its excerpt.
+// reviews: reader quotes, shown on the book's page and in the home page's
+// "What Readers Say" section. Plain text; escaped when shown.
 export const BOOKS = [
   {
     slug: "finding-tina",
@@ -82,6 +85,10 @@ export const BOOKS = [
     height: 1500,
     amazon: "https://www.amazon.ca/Eating-Stories-Family-Folklore-Fabulation-ebook/dp/B0CPL1CR5S",
     sample: false,
+    reviews: [
+      { stars: 5, text: "As someone who’s rediscovering the joy of cooking, “Eating Stories: Fun Food, Family & Fabulation” by Jeffrey Potts has been an absolute delight. The recipes themselves are fantastic, but it’s the stories behind them that add a whole new layer of enjoyment. As I read, I could hear his voice and visualize the scenes he painted with his words. It’s like having a conversation with a friend while cooking in the kitchen!", who: "Colleen" },
+      { stars: 5, text: "I initially read this on my Kindle, but I found myself craving the tactile experience of flipping through actual pages, so I ordered the paperback. There’s something special about being able to make handwritten notes and immerse myself in these stories in a sunny corner with a cup of tea.", who: "SB" },
+    ],
     description:
       "“Eating Stories” is not just a cookbook; it’s a testament to the power of food in connecting us to our past, celebrating our present, and paving the way for future experiences. Join Jeffrey Potts on this captivating journey where food, storytelling, and life beautifully converge, inviting you to create your own tales with each delicious bite.",
   },
@@ -116,6 +123,10 @@ const STYLE = `<style>
   .book-grid { list-style: none; padding: 0; margin: 16px 0 40px; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 24px; }
   .book-grid a { text-decoration: none; color: var(--heading); font-weight: 600; }
   .book-grid span { display: block; margin-top: 10px; }
+  .book-reviews blockquote { margin: 0 0 20px; padding: 18px 22px; background: var(--surface); border-left: 3px solid var(--gold); }
+  .book-reviews .stars { color: var(--gold); letter-spacing: 0.1em; margin: 0 0 6px; }
+  .book-reviews blockquote p { margin: 0 0 8px; }
+  .book-reviews footer { font: 700 0.85rem/1.4 'Helvetica Neue', Arial, sans-serif; color: var(--muted); }
   .book-alert { border-top: 3px solid var(--rust); background: var(--surface); padding: 22px 24px; margin: 28px 0 8px; }
   .book-alert h2 { margin: 0 0 6px; font-size: 1.2rem; }
   .book-alert p { margin: 0 0 14px; }
@@ -167,12 +178,38 @@ export function homeCardsHtml() {
   }).join("\n");
 }
 
-/** The home page with its book cards filled in from BOOKS. */
+const STARS = (n) => "\u2605".repeat(n);
+
+/** Every review, for the home page's "What Readers Say" (index.html's .quotes styles). */
+export function homeReviewsHtml() {
+  return BOOKS.flatMap((b) => (b.reviews || []).map((r) => `
+      <blockquote class="quote">
+        <div class="stars" aria-label="${r.stars} out of 5 stars">${STARS(r.stars)}</div>
+        <p>${escapeHtml(r.text)}</p>
+        <span class="who">&mdash; ${escapeHtml(r.who)}, on <a href="/books/${b.slug}">${escapeHtml(b.title)}</a></span>
+      </blockquote>`)).join("\n");
+}
+
+function reviewsHtml(b) {
+  if (!b.reviews || !b.reviews.length) return "";
+  return `<section class="book-reviews" aria-labelledby="reviews-heading">
+      <h2 id="reviews-heading">What readers say</h2>
+      ${b.reviews.map((r) => `<blockquote>
+        <p class="stars" aria-label="${r.stars} out of 5 stars">${STARS(r.stars)}</p>
+        <p>${escapeHtml(r.text)}</p>
+        <footer>&mdash; ${escapeHtml(r.who)}</footer>
+      </blockquote>`).join("")}
+    </section>`;
+}
+
+/** The home page with its book cards, reviews and About text filled in. */
 export async function homePage(request, env) {
   const res = await env.ASSETS.fetch(request);
   if (!res.ok || !(res.headers.get("Content-Type") || "").includes("text/html")) return res;
   return new HTMLRewriter()
     .on("div.books[data-books]", { element: (el) => el.setInnerContent(homeCardsHtml(), { html: true }) })
+    .on("div.quotes[data-reviews]", { element: (el) => el.setInnerContent(homeReviewsHtml(), { html: true }) })
+    .on("div.about-body[data-bio]", { element: (el) => el.setInnerContent(PRESS.longBio.map((p) => `<p>${escapeHtml(p)}</p>`).join("\n"), { html: true }) })
     .transform(res);
 }
 
@@ -203,6 +240,7 @@ function bookPage(b) {
         ${b.amazon ? "" : bookAlertFormHtml(b)}
       </div>
     </article>
+    ${reviewsHtml(b)}
     ${subscribeBoxHtml()}
     <h2>More books</h2>
     ${gridHtml(others)}

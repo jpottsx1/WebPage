@@ -23,9 +23,10 @@
     // Hostnames Turnstile tokens may come from
     "TURNSTILE_HOSTNAMES": "jeffreypotts.ca,www.jeffreypotts.ca"
   },
-  // Daily health check at 12:00 UTC (8 a.m. in Toronto); see src/lib/alerts.js.
+  // Daily health check at 12:00 UTC (8 a.m. in Toronto), and an hourly check
+  // that sgeulai.com is up; see src/lib/alerts.js.
   "triggers": {
-    "crons": ["0 12 * * *"]
+    "crons": ["0 12 * * *", "17 * * * *"]
   },
   "compatibility_flags": [
     "nodejs_compat"

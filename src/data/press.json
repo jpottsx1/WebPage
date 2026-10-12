@@ -1,0 +1,18 @@
+{
+  "_note": "Bios for /press, the press kit zip (tools/build-press-kit.py) and the home page's About section. Plain text; the site escapes it.",
+  "name": "Jeffrey Potts",
+  "location": "Prince Edward County, Ontario",
+  "shortBio": "Jeffrey Potts is a writer from Cornwall, Ontario, who now lives in Prince Edward County. After careers in campus radio, teaching and management consulting in Toronto and the United States, he writes memoir about food, family and getting back up. His books include Eating Stories and Curling In Cornwall; Most Days, a memoir of living with bipolar disorder, is coming soon.",
+  "longBio": [
+    "Jeffrey Potts is a bilingual writer fluent in both French and English, who grew up in the vibrant mill town of Cornwall, Ontario. He graduated from University with a Bachelor of Arts in Economics, a foundation that has informed his diverse and accomplished career.",
+    "Jeffrey’s professional journey began in the late 1980s, managing campus community radio stations, a role that honed his communication and organizational skills. He later transitioned to teaching, working as a high school educator before co-owning a successful computer consulting firm in downtown Toronto. This entrepreneurial venture eventually led him to the United States during the dot-com boom of the 1990s, where he thrived as a management consultant.",
+    "After gaining extensive experience in the fast-paced world of American business, Jeffrey returned to Canada to join one of the country’s top five management consultancies. However, weary of the relentless business travel that came with the job, he and his wife decided to embrace a quieter life, settling in the picturesque community of Prince Edward County.",
+    "Now drawing inspiration from his rich professional background and the serene surroundings of his new home, Jeffrey focuses on his passion for writing, sharing stories that blend his deep understanding of human connections and the complexities of modern life."
+  ],
+  "headshot": {
+    "jpg": "/Headshots/Jeff_Potts_3_crop.jpg",
+    "webp": "/Headshots/jeff-potts-headshot.webp",
+    "width": 799,
+    "height": 999
+  }
+}

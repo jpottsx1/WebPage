@@ -150,3 +150,35 @@ export async function scheduledHealthCheck(env, config) {
     lines: problems,
   });
 }
+
+/**
+ * The hourly cron: is the other site up? A site can't report its own outage,
+ * so jeffreypotts.ca and sgeulai.com each check the other. A URL that fails
+ * twice, a few seconds apart, sends an alert (at most once an hour).
+ */
+export async function checkOtherSite(env, config, urls) {
+  const failures = [];
+  for (const url of urls) {
+    let problem = await probe(url);
+    if (problem) {
+      await new Promise((r) => setTimeout(r, 5000));
+      problem = await probe(url);
+    }
+    if (problem) failures.push(`${url}: ${problem}`);
+  }
+  if (!failures.length) return;
+  await sendAlert(env, config, {
+    kind: "other-site-down",
+    subject: `${new URL(urls[0]).host} looks down`,
+    lines: [...failures, `Checked from ${config.site}, twice, five seconds apart. Its own error alerts can't reach you if it's down.`],
+  });
+}
+
+async function probe(url) {
+  try {
+    const r = await fetch(url, { headers: { "User-Agent": "uptime-check (other site's cron)" }, signal: AbortSignal.timeout(15000) });
+    return r.ok ? null : `answered ${r.status}`;
+  } catch (e) {
+    return e.name === "TimeoutError" ? "no answer within 15 seconds" : `couldn't connect (${e.message})`;
+  }
+}
