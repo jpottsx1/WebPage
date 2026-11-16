@@ -59,6 +59,7 @@ export async function handleSeoRequest(request, env, url) {
       ...posts.map((p) => ({ loc: `${SITE_URL}/blog/${p.slug}`, lastmod: isoDate(p.updated_at || p.created_at) })),
       ...tags.map((t) => ({ loc: `${SITE_URL}/blog/tag/${t.slug}` })),
       { loc: `${SITE_URL}/newsletter` },
+      { loc: `${SITE_URL}/privacy` },
       ...issues.map((n) => ({ loc: `${SITE_URL}/newsletter/${n.id}`, lastmod: isoDate(n.sent_at) })),
     ];
     const body = entries
