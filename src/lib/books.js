@@ -24,6 +24,7 @@ const ABOUT_WORKSHOP = `<p class="about-workshop">Away from the books, Jeffrey m
 // amazon: a product URL, or null while the book isn't out (the button then
 // becomes an Amazon search, localised by /amazon-links.js like the home page).
 // badge: [text, "soon" | "2027"] for unreleased books.
+// formats: what a released book comes in, when not "Paperback and ebook".
 // sample: true when the home page's "Read a Sample" section has its excerpt.
 // reviews: reader quotes, shown on the book's page and in the home page's
 // "What Readers Say" section. Plain text; escaped when shown.
@@ -75,6 +76,23 @@ export const BOOKS = [
     sample: true,
     description:
       "A memoir of bipolar disorder. A thirty-year fight, a thousand bad days, and the stubborn act of still getting up. Not recovered, not cured — still here, and telling the truth about what that costs and what it's worth.",
+  },
+  {
+    slug: "when-your-mind-and-money-collide",
+    title: "When Your Mind and Money Collide",
+    fullTitle: "When Your Mind and Money Collide: Canada — Protecting Your Finances During Mental Health Episodes",
+    tag: "Personal Finance · Mental Health",
+    genre: "Personal Finance",
+    badge: null,
+    webp: "/Books/when-your-mind-and-money-collide.webp",
+    jpg: "/Books/when-your-mind-and-money-collide.jpg",
+    width: 1000,
+    height: 1293,
+    amazon: "https://www.amazon.ca/dp/1069611700",
+    formats: "Paperback",
+    sample: false,
+    description:
+      "When your mental health falls apart, your money often follows. A plain-language, judgment-free guide for Canadians living with depression, anxiety, bipolar disorder, ADHD or PTSD, and the families who support them: a 72-hour financial triage plan, word-for-word scripts for landlords and creditors, Canada’s disability benefits explained, and worksheets built to be filled in on a bad day. Not ten steps, not a whole staircase. Just the next one.",
   },
   {
     slug: "eating-stories",
@@ -248,7 +266,7 @@ function bookPage(b) {
       <div>
         <p class="book-tag">${escapeHtml(b.tag)}</p>
         <h1>${escapeHtml(b.fullTitle || b.title)}</h1>
-        <p class="meta">By Jeffrey Potts${b.badge ? ` · ${escapeHtml(b.badge[0])}` : " · Paperback and ebook"}</p>
+        <p class="meta">By Jeffrey Potts${b.badge ? ` · ${escapeHtml(b.badge[0])}` : ` · ${escapeHtml(b.formats || "Paperback and ebook")}`}</p>
         <p class="description">${escapeHtml(b.description)}</p>
         <div class="book-buttons">
           <a class="btn btn-primary" href="${escapeHtml(buyHref(b))}"${b.amazon ? "" : ` data-amazon="${escapeHtml(b.search)}"`} target="_blank" rel="noopener">${buyLabel}</a>
@@ -293,13 +311,13 @@ function indexPage() {
   const bodyHtml = `${STYLE}
     <p class="eyebrow">The Books</p>
     <h1>True stories worth your evening</h1>
-    <p>Memoir, food and local history, in paperback and ebook. Pick a cover to read more.</p>
+    <p>Memoir, food, local history and personal finance, in paperback and ebook. Pick a cover to read more.</p>
     ${gridHtml(BOOKS)}
     ${subscribeBoxHtml()}`;
   return html(
     pageShell({
       title: "Books — Jeffrey Potts",
-      description: "Every book by Jeffrey Potts: Finding Tina, I Only Cook Supper, Most Days, Eating Stories and Curling In Cornwall.",
+      description: "Every book by Jeffrey Potts: Finding Tina, I Only Cook Supper, Most Days, When Your Mind and Money Collide, Eating Stories and Curling In Cornwall.",
       canonical: "/books/",
       image: "/Jeffreypotts.jpg",
       jsonLd: {
