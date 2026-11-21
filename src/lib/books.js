@@ -17,6 +17,10 @@ import { SITE_URL } from "./seo.js";
 import { bookAlertFormHtml } from "./bookalerts.js";
 import PRESS from "../data/press.json";
 
+// After the bio on the home page (not part of longBio, which the press kit
+// shows as copyable plain text): where the software and the podcast live.
+const ABOUT_WORKSHOP = `<p class="about-workshop">Away from the books, Jeffrey makes software and sound at <a href="https://bustermungusindustries.com/">Buster Mungus Industries</a>: <a href="https://sgeulai.com">Sgeulai</a>, a writing app with a story bible built in; <a href="https://bustermungusindustries.com/highlights/">Highlights</a>, for readers who mark up Apple Books; <a href="https://bustermungusindustries.com/loudness-lab/">Loudness Lab</a>, for DJs; and <a href="https://bustermungus.com">The Buster Mungus Diaries</a> podcast.</p>`;
+
 // amazon: a product URL, or null while the book isn't out (the button then
 // becomes an Amazon search, localised by /amazon-links.js like the home page).
 // badge: [text, "soon" | "2027"] for unreleased books.
@@ -222,7 +226,7 @@ export async function homePage(request, env) {
   return new HTMLRewriter()
     .on("div.books[data-books]", { element: (el) => el.setInnerContent(homeCardsHtml(), { html: true }) })
     .on("div.quotes[data-reviews]", { element: (el) => el.setInnerContent(homeReviewsHtml(), { html: true }) })
-    .on("div.about-body[data-bio]", { element: (el) => el.setInnerContent(PRESS.longBio.map((p) => `<p>${escapeHtml(p)}</p>`).join("\n"), { html: true }) })
+    .on("div.about-body[data-bio]", { element: (el) => el.setInnerContent(PRESS.longBio.map((p) => `<p>${escapeHtml(p)}</p>`).join("\n") + "\n" + ABOUT_WORKSHOP, { html: true }) })
     .transform(res);
 }
 
