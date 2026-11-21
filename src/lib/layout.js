@@ -189,7 +189,7 @@ ${seo.join("\n")}
     : ""
 }</div></header>
 <main id="main"><div class="wrap">${bodyHtml}</div></main>
-<footer><div class="wrap">&copy; <span id="year"></span> Jeffrey Potts. All rights reserved. &nbsp;&middot;&nbsp; <a href="/">Back to the site</a></div></footer>
+<footer><div class="wrap">&copy; <span id="year"></span> Jeffrey Potts. All rights reserved. &nbsp;&middot;&nbsp; <a href="/">Back to the site</a> &nbsp;&middot;&nbsp; <a href="https://bustermungusindustries.com/">Buster Mungus Industries</a></div></footer>
 <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
 </body>
 </html>`;
