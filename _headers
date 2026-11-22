@@ -16,3 +16,5 @@
   Cache-Control: public, max-age=604800
 /jeffreypotts*
   Cache-Control: public, max-age=604800
+/forms/*
+  Cache-Control: public, max-age=604800

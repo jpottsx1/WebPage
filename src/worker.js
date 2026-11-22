@@ -16,6 +16,7 @@
  *   /admin/* — the blog CMS (src/lib/blog.js) and newsletter (src/lib/newsletter.js)
  *   /blog/* — dynamic blog, see src/lib/blog.js
  *   /books/* and the home page's book cards — src/lib/books.js
+ *   /forms — the book's printable forms (the book prints jeffreypotts.ca/Forms), src/lib/forms.js
  *   /api/book-alert*, /admin/book-alerts — "tell me when it's out", src/lib/bookalerts.js
  *   /robots.txt, /sitemap.xml, /blog/feed.xml — see src/lib/seo.js
  *   POST /xmlrpc, GET /rsd.xml — posting to the blog from MarsEdit,
@@ -45,6 +46,7 @@
 import { logoutCookieHeader, requireSession } from "./lib/auth.js";
 import { withErrorAlerts, healthCheck, scheduledHealthCheck, sendAlert, checkOtherSite } from "./lib/alerts.js";
 import { handlePressRequest } from "./lib/press.js";
+import { handleFormsRequest } from "./lib/forms.js";
 import { confirmUrl, checkConfirmLink, addPending, confirmPending, clearExpiredPending, CONFIRM_DAYS } from "./lib/optin.js";
 import { pageShell } from "./lib/layout.js";
 import { handleBooksRequest, homePage } from "./lib/books.js";
@@ -430,6 +432,8 @@ async function route(request, env) {
   if (newsletterResponse) return newsletterResponse;
   const pressResponse = handlePressRequest(request, url);
   if (pressResponse) return pressResponse;
+  const formsResponse = handleFormsRequest(request, url);
+  if (formsResponse) return formsResponse;
   const booksResponse = handleBooksRequest(request, url);
   if (booksResponse) return booksResponse;
   const seoResponse = await handleSeoRequest(request, env, url);
