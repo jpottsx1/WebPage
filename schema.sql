@@ -119,3 +119,14 @@ CREATE TABLE IF NOT EXISTS book_alert_sends (
   sent_at         TEXT NOT NULL,
   recipient_count INTEGER NOT NULL
 );
+
+-- People who signed up for the book's printable forms at /forms
+-- (src/lib/forms.js). newsletter = 1 if they ticked the newsletter box, which
+-- starts the usual double opt-in; this table is not the newsletter list.
+CREATE TABLE IF NOT EXISTS forms_signups (
+  email       TEXT PRIMARY KEY,
+  name        TEXT NOT NULL,
+  newsletter  INTEGER NOT NULL DEFAULT 0,
+  created_at  TEXT NOT NULL,
+  updated_at  TEXT NOT NULL
+);
