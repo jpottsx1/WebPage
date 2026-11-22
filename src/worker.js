@@ -16,7 +16,8 @@
  *   /admin/* — the blog CMS (src/lib/blog.js) and newsletter (src/lib/newsletter.js)
  *   /blog/* — dynamic blog, see src/lib/blog.js
  *   /books/* and the home page's book cards — src/lib/books.js
- *   /forms — the book's printable forms (the book prints jeffreypotts.ca/Forms), src/lib/forms.js
+ *   /forms, /forms/*.pdf, POST /api/forms-access — the book's printable forms
+ *     behind a name-and-email sign-up (the book prints jeffreypotts.ca/Forms), src/lib/forms.js
  *   /api/book-alert*, /admin/book-alerts — "tell me when it's out", src/lib/bookalerts.js
  *   /robots.txt, /sitemap.xml, /blog/feed.xml — see src/lib/seo.js
  *   POST /xmlrpc, GET /rsd.xml — posting to the blog from MarsEdit,
@@ -129,6 +130,25 @@ async function handleSubscribe(request, env) {
     return json(500, { error: "Couldn't send the confirmation email. Please try again in a moment." });
   }
   return json(202, { ok: true, pending: true });
+}
+
+/**
+ * Starts the newsletter's double opt-in for someone who ticked the box on
+ * another form (the /forms sign-up). Returns "already" if they're on the
+ * list, or "pending" once the confirmation email is sent. Throws if it can't.
+ */
+async function startNewsletterOptIn(env, email, name) {
+  const existing = await env.DB.prepare("SELECT email FROM subscribers WHERE email = ?").bind(email).first();
+  if (existing) return "already";
+  if (!env.RESEND_API_KEY || !env.FROM_EMAIL || !env.SESSION_SECRET) throw new Error("newsletter email not configured");
+  await addPending(env, email, name);
+  const link = await confirmUrl("https://jeffreypotts.ca", env.SESSION_SECRET, email);
+  await sendEmail(env, {
+    to: email,
+    subject: "Please confirm your subscription",
+    html: confirmHtml(name.split(/\s+/)[0] || "friend", link),
+  });
+  return "pending";
 }
 
 // Adds a confirmed subscriber's welcome email and the author's notification.
@@ -432,7 +452,7 @@ async function route(request, env) {
   if (newsletterResponse) return newsletterResponse;
   const pressResponse = handlePressRequest(request, url);
   if (pressResponse) return pressResponse;
-  const formsResponse = handleFormsRequest(request, url);
+  const formsResponse = await handleFormsRequest(request, env, url, { startNewsletterOptIn });
   if (formsResponse) return formsResponse;
   const booksResponse = handleBooksRequest(request, url);
   if (booksResponse) return booksResponse;
