@@ -1,0 +1,852 @@
+{
+  "_note": "The printable forms at /forms (src/lib/forms.js). sourcePages are page positions in the book's print-interior PDF, one more than the printed page number. tools/build-forms.py cuts the PDFs in /forms from that file; run it after changing this list.",
+  "book": "when-your-mind-and-money-collide",
+  "all": "/forms/when-your-mind-and-money-collide-all-forms.pdf",
+  "forms": [
+    {
+      "title": "Emergency Leave Request Email",
+      "page": 13,
+      "chapter": "Crisis Management & Immediate Response",
+      "file": "/forms/p013-emergency-leave-request-email.pdf",
+      "sourcePages": [
+        14
+      ]
+    },
+    {
+      "title": "Creditor Communication Script",
+      "page": 14,
+      "chapter": "Crisis Management & Immediate Response",
+      "file": "/forms/p014-creditor-communication-script.pdf",
+      "sourcePages": [
+        15
+      ]
+    },
+    {
+      "title": "Workplace Accommodation Request Email",
+      "page": 19,
+      "chapter": "Understanding the Crisis",
+      "file": "/forms/p019-workplace-accommodation-request-email.pdf",
+      "sourcePages": [
+        20
+      ]
+    },
+    {
+      "title": "Financial Hardship Letter Template",
+      "page": 20,
+      "chapter": "Understanding the Crisis",
+      "file": "/forms/p020-financial-hardship-letter-template.pdf",
+      "sourcePages": [
+        21
+      ]
+    },
+    {
+      "title": "Emergency Contact List",
+      "page": 25,
+      "chapter": "Immediate Financial Triage (First 72 Hours)",
+      "file": "/forms/p025-emergency-contact-list.pdf",
+      "sourcePages": [
+        26
+      ]
+    },
+    {
+      "title": "Crisis Budget Worksheet",
+      "page": 26,
+      "chapter": "Immediate Financial Triage (First 72 Hours)",
+      "file": "/forms/p026-crisis-budget-worksheet.pdf",
+      "sourcePages": [
+        27
+      ]
+    },
+    {
+      "title": "Crisis Communication Script for Employers",
+      "page": 27,
+      "chapter": "Immediate Financial Triage (First 72 Hours)",
+      "file": "/forms/p027-crisis-communication-script-for-employers.pdf",
+      "sourcePages": [
+        28
+      ]
+    },
+    {
+      "title": "Emergency Leave Request Letter Template",
+      "page": 28,
+      "chapter": "Immediate Financial Triage (First 72 Hours)",
+      "file": "/forms/p028-emergency-leave-request-letter-template.pdf",
+      "sourcePages": [
+        29
+      ]
+    },
+    {
+      "title": "Hardship Letter to Creditors Template",
+      "page": 32,
+      "chapter": "Securing Basic Needs",
+      "file": "/forms/p032-hardship-letter-to-creditors-template.pdf",
+      "sourcePages": [
+        33
+      ]
+    },
+    {
+      "title": "Payment Arrangement Request Template",
+      "page": 33,
+      "chapter": "Securing Basic Needs",
+      "file": "/forms/p033-payment-arrangement-request-template.pdf",
+      "sourcePages": [
+        34
+      ]
+    },
+    {
+      "title": "EI Sickness Benefit Application Checklist",
+      "page": 58,
+      "chapter": "Canadian Financial Safety Net Navigation",
+      "file": "/forms/p058-ei-sickness-benefit-application-checklist.pdf",
+      "sourcePages": [
+        59
+      ]
+    },
+    {
+      "title": "EI Sickness Benefits Application Timeline",
+      "page": 59,
+      "chapter": "Canadian Financial Safety Net Navigation",
+      "file": "/forms/p059-ei-sickness-benefits-application-timeline.pdf",
+      "sourcePages": [
+        60
+      ]
+    },
+    {
+      "title": "Medical Professional Support Letter Request",
+      "page": 60,
+      "chapter": "Canadian Financial Safety Net Navigation",
+      "file": "/forms/p060-medical-professional-support-letter-request.pdf",
+      "sourcePages": [
+        61,
+        63
+      ]
+    },
+    {
+      "title": "Medical Documentation Preparation Form",
+      "page": 61,
+      "chapter": "Canadian Financial Safety Net Navigation",
+      "file": "/forms/p061-medical-documentation-preparation-form.pdf",
+      "sourcePages": [
+        62
+      ]
+    },
+    {
+      "title": "Creditor Negotiation Script",
+      "page": 73,
+      "chapter": "Debt Management During Recovery",
+      "file": "/forms/p073-creditor-negotiation-script.pdf",
+      "sourcePages": [
+        74
+      ]
+    },
+    {
+      "title": "Recovery Budget Worksheet",
+      "page": 74,
+      "chapter": "Debt Management During Recovery",
+      "file": "/forms/p074-recovery-budget-worksheet.pdf",
+      "sourcePages": [
+        75
+      ]
+    },
+    {
+      "title": "Hardship Letter Template",
+      "page": 75,
+      "chapter": "Debt Management During Recovery",
+      "file": "/forms/p075-hardship-letter-template.pdf",
+      "sourcePages": [
+        76
+      ]
+    },
+    {
+      "title": "Return-to-Work Accommodation Request",
+      "page": 81,
+      "chapter": "Workplace Re-entry Planning",
+      "file": "/forms/p081-return-to-work-accommodation-request.pdf",
+      "sourcePages": [
+        82
+      ]
+    },
+    {
+      "title": "Workplace Mental Health Disclosure Guide",
+      "page": 82,
+      "chapter": "Workplace Re-entry Planning",
+      "file": "/forms/p082-workplace-mental-health-disclosure-guide.pdf",
+      "sourcePages": [
+        83
+      ]
+    },
+    {
+      "title": "Gradual Return-to-Work Schedule",
+      "page": 83,
+      "chapter": "Workplace Re-entry Planning",
+      "file": "/forms/p083-gradual-return-to-work-schedule.pdf",
+      "sourcePages": [
+        84
+      ]
+    },
+    {
+      "title": "Financial Resilience Assessment",
+      "page": 91,
+      "chapter": "Long-Term Financial Recovery & Resilience",
+      "file": "/forms/p091-financial-resilience-assessment.pdf",
+      "sourcePages": [
+        92
+      ]
+    },
+    {
+      "title": "Monthly Financial Health Check",
+      "page": 92,
+      "chapter": "Long-Term Financial Recovery & Resilience",
+      "file": "/forms/p092-monthly-financial-health-check.pdf",
+      "sourcePages": [
+        93
+      ]
+    },
+    {
+      "title": "Financial Crisis Prevention Plan",
+      "page": 93,
+      "chapter": "Long-Term Financial Recovery & Resilience",
+      "file": "/forms/p093-financial-crisis-prevention-plan.pdf",
+      "sourcePages": [
+        94
+      ]
+    },
+    {
+      "title": "Post-Crisis Financial Worksheet",
+      "page": 99,
+      "chapter": "Rebuilding Financial Foundation",
+      "file": "/forms/p099-post-crisis-financial-worksheet.pdf",
+      "sourcePages": [
+        100
+      ]
+    },
+    {
+      "title": "Financial Recovery Timeline",
+      "page": 100,
+      "chapter": "Rebuilding Financial Foundation",
+      "file": "/forms/p100-financial-recovery-timeline.pdf",
+      "sourcePages": [
+        101
+      ]
+    },
+    {
+      "title": "Monthly Financial Check-In Worksheet",
+      "page": 101,
+      "chapter": "Rebuilding Financial Foundation",
+      "file": "/forms/p101-monthly-financial-check-in-worksheet.pdf",
+      "sourcePages": [
+        102
+      ]
+    },
+    {
+      "title": "Trigger-Aware Spending Plan",
+      "page": 118,
+      "chapter": "Mental Health-Informed Money Management",
+      "file": "/forms/p118-trigger-aware-spending-plan.pdf",
+      "sourcePages": [
+        119
+      ]
+    },
+    {
+      "title": "Mental Health Emergency Fund Calculator",
+      "page": 119,
+      "chapter": "Mental Health-Informed Money Management",
+      "file": "/forms/p119-mental-health-emergency-fund-calculator.pdf",
+      "sourcePages": [
+        120
+      ]
+    },
+    {
+      "title": "Mental Health Emergency Funds",
+      "page": 125,
+      "chapter": "Building Long-Term Resilience",
+      "file": "/forms/p125-mental-health-emergency-funds.pdf",
+      "sourcePages": [
+        126
+      ]
+    },
+    {
+      "title": "Daily Mood and Spending Tracker",
+      "page": 126,
+      "chapter": "Building Long-Term Resilience",
+      "file": "/forms/p126-daily-mood-and-spending-tracker.pdf",
+      "sourcePages": [
+        127
+      ]
+    },
+    {
+      "title": "Personal Financial Resilience Plan",
+      "page": 127,
+      "chapter": "Building Long-Term Resilience",
+      "file": "/forms/p127-personal-financial-resilience-plan.pdf",
+      "sourcePages": [
+        128
+      ]
+    },
+    {
+      "title": "Workplace Accommodation Request Form",
+      "page": 128,
+      "chapter": "Building Long-Term Resilience",
+      "file": "/forms/p128-workplace-accommodation-request-form.pdf",
+      "sourcePages": [
+        129
+      ]
+    },
+    {
+      "title": "Benefit Application Tracking Sheet",
+      "page": 129,
+      "chapter": "Building Long-Term Resilience",
+      "file": "/forms/p129-benefit-application-tracking-sheet.pdf",
+      "sourcePages": [
+        130
+      ]
+    },
+    {
+      "title": "Medical Appointment and Treatment Log",
+      "page": 130,
+      "chapter": "Building Long-Term Resilience",
+      "file": "/forms/p130-medical-appointment-and-treatment-log.pdf",
+      "sourcePages": [
+        131
+      ]
+    },
+    {
+      "title": "Skills Development Plan",
+      "page": 131,
+      "chapter": "Building Long-Term Resilience",
+      "file": "/forms/p131-skills-development-plan.pdf",
+      "sourcePages": [
+        132
+      ]
+    },
+    {
+      "title": "Support Network Directory",
+      "page": 132,
+      "chapter": "Building Long-Term Resilience",
+      "file": "/forms/p132-support-network-directory.pdf",
+      "sourcePages": [
+        133
+      ]
+    },
+    {
+      "title": "Crisis Prevention Checklist",
+      "page": 133,
+      "chapter": "Building Long-Term Resilience",
+      "file": "/forms/p133-crisis-prevention-checklist.pdf",
+      "sourcePages": [
+        134
+      ]
+    },
+    {
+      "title": "Emergency Action Plan",
+      "page": 134,
+      "chapter": "Building Long-Term Resilience",
+      "file": "/forms/p134-emergency-action-plan.pdf",
+      "sourcePages": [
+        135
+      ]
+    },
+    {
+      "title": "Short-Term Disability Application Support Letter Request",
+      "page": 140,
+      "chapter": "Understanding Short-Term and Long-Term Disability in Canada",
+      "file": "/forms/p140-short-term-disability-application-support-letter-request.pdf",
+      "sourcePages": [
+        141
+      ]
+    },
+    {
+      "title": "EAP Initial Contact Script",
+      "page": 141,
+      "chapter": "Understanding Short-Term and Long-Term Disability in Canada",
+      "file": "/forms/p141-eap-initial-contact-script.pdf",
+      "sourcePages": [
+        142
+      ]
+    },
+    {
+      "title": "Provincial Crisis Line Quick Reference Card",
+      "page": 182,
+      "chapter": "Resource Directory and Quick References",
+      "file": "/forms/p182-provincial-crisis-line-quick-reference-card.pdf",
+      "sourcePages": [
+        183
+      ]
+    },
+    {
+      "title": "Crisis Notification – Employer",
+      "page": 188,
+      "chapter": "Communication Templates",
+      "file": "/forms/p188-crisis-notification-employer.pdf",
+      "sourcePages": [
+        189
+      ]
+    },
+    {
+      "title": "Crisis Notification – Landlord",
+      "page": 189,
+      "chapter": "Communication Templates",
+      "file": "/forms/p189-crisis-notification-landlord.pdf",
+      "sourcePages": [
+        190
+      ]
+    },
+    {
+      "title": "Medical Documentation Request",
+      "page": 190,
+      "chapter": "Communication Templates",
+      "file": "/forms/p190-medical-documentation-request.pdf",
+      "sourcePages": [
+        191
+      ]
+    },
+    {
+      "title": "Workplace Accommodation Request",
+      "page": 191,
+      "chapter": "Communication Templates",
+      "file": "/forms/p191-workplace-accommodation-request.pdf",
+      "sourcePages": [
+        192
+      ]
+    },
+    {
+      "title": "Financial Hardship Letter",
+      "page": 192,
+      "chapter": "Communication Templates",
+      "file": "/forms/p192-financial-hardship-letter.pdf",
+      "sourcePages": [
+        193
+      ]
+    },
+    {
+      "title": "Return-to-Work Transition Plan",
+      "page": 193,
+      "chapter": "Communication Templates",
+      "file": "/forms/p193-return-to-work-transition-plan.pdf",
+      "sourcePages": [
+        194
+      ]
+    },
+    {
+      "title": "Creditor Negotiation Script",
+      "page": 194,
+      "chapter": "Communication Templates",
+      "file": "/forms/p194-creditor-negotiation-script.pdf",
+      "sourcePages": [
+        195
+      ]
+    },
+    {
+      "title": "Crisis Budget Template",
+      "page": 200,
+      "chapter": "Financial Planning Worksheets",
+      "file": "/forms/p200-crisis-budget-template.pdf",
+      "sourcePages": [
+        201,
+        202
+      ]
+    },
+    {
+      "title": "Income Replacement Planning Form",
+      "page": 202,
+      "chapter": "Financial Planning Worksheets",
+      "file": "/forms/p202-income-replacement-planning-form.pdf",
+      "sourcePages": [
+        203
+      ]
+    },
+    {
+      "title": "Crisis Communication Plan",
+      "page": 203,
+      "chapter": "Financial Planning Worksheets",
+      "file": "/forms/p203-crisis-communication-plan.pdf",
+      "sourcePages": [
+        204
+      ]
+    },
+    {
+      "title": "Mental Health Symptom Tracking Form",
+      "page": 204,
+      "chapter": "Financial Planning Worksheets",
+      "file": "/forms/p204-mental-health-symptom-tracking-form.pdf",
+      "sourcePages": [
+        205
+      ]
+    },
+    {
+      "title": "Financial Recovery Planning Form",
+      "page": 205,
+      "chapter": "Financial Planning Worksheets",
+      "file": "/forms/p205-financial-recovery-planning-form.pdf",
+      "sourcePages": [
+        206
+      ]
+    },
+    {
+      "title": "Support Network Contact Directory",
+      "page": 206,
+      "chapter": "Financial Planning Worksheets",
+      "file": "/forms/p206-support-network-contact-directory.pdf",
+      "sourcePages": [
+        207
+      ]
+    },
+    {
+      "title": "Crisis Prevention Planning Form",
+      "page": 207,
+      "chapter": "Financial Planning Worksheets",
+      "file": "/forms/p207-crisis-prevention-planning-form.pdf",
+      "sourcePages": [
+        208
+      ]
+    },
+    {
+      "title": "Daily Wellness Check-In Form",
+      "page": 208,
+      "chapter": "Financial Planning Worksheets",
+      "file": "/forms/p208-daily-wellness-check-in-form.pdf",
+      "sourcePages": [
+        209
+      ]
+    },
+    {
+      "title": "Emergency Financial Resources Guide",
+      "page": 209,
+      "chapter": "Financial Planning Worksheets",
+      "file": "/forms/p209-emergency-financial-resources-guide.pdf",
+      "sourcePages": [
+        210
+      ]
+    },
+    {
+      "title": "Emergency Financial Resources Guide II",
+      "page": 210,
+      "chapter": "Financial Planning Worksheets",
+      "file": "/forms/p210-emergency-financial-resources-guide-ii.pdf",
+      "sourcePages": [
+        211
+      ]
+    },
+    {
+      "title": "Insurance Claims Tracking Form",
+      "page": 211,
+      "chapter": "Financial Planning Worksheets",
+      "file": "/forms/p211-insurance-claims-tracking-form.pdf",
+      "sourcePages": [
+        212
+      ]
+    },
+    {
+      "title": "Income Replacement Calculator",
+      "page": 212,
+      "chapter": "Financial Planning Worksheets",
+      "file": "/forms/p212-income-replacement-calculator.pdf",
+      "sourcePages": [
+        213,
+        214
+      ]
+    },
+    {
+      "title": "Debt Prioritization Matrix",
+      "page": 214,
+      "chapter": "Financial Planning Worksheets",
+      "file": "/forms/p214-debt-prioritization-matrix.pdf",
+      "sourcePages": [
+        215,
+        216,
+        217
+      ]
+    },
+    {
+      "title": "Recovery Timeline Planner",
+      "page": 217,
+      "chapter": "Financial Planning Worksheets",
+      "file": "/forms/p217-recovery-timeline-planner.pdf",
+      "sourcePages": [
+        218,
+        219,
+        220,
+        221
+      ]
+    },
+    {
+      "title": "Emergency Preparedness Checklist",
+      "page": 221,
+      "chapter": "Financial Planning Worksheets",
+      "file": "/forms/p221-emergency-preparedness-checklist.pdf",
+      "sourcePages": [
+        222,
+        223,
+        224,
+        225,
+        226,
+        227
+      ]
+    },
+    {
+      "title": "Mood and Spending Tracking Sheet",
+      "page": 232,
+      "chapter": "Mental Health Integration Tools",
+      "file": "/forms/p232-mood-and-spending-tracking-sheet.pdf",
+      "sourcePages": [
+        233
+      ]
+    },
+    {
+      "title": "Trigger Identification Worksheet",
+      "page": 233,
+      "chapter": "Mental Health Integration Tools",
+      "file": "/forms/p233-trigger-identification-worksheet.pdf",
+      "sourcePages": [
+        234,
+        235,
+        236,
+        237
+      ]
+    },
+    {
+      "title": "Support Network Mapping",
+      "page": 237,
+      "chapter": "Mental Health Integration Tools",
+      "file": "/forms/p237-support-network-mapping.pdf",
+      "sourcePages": [
+        238,
+        239,
+        240,
+        241
+      ]
+    },
+    {
+      "title": "Self-Care Budget Planner",
+      "page": 241,
+      "chapter": "Mental Health Integration Tools",
+      "file": "/forms/p241-self-care-budget-planner.pdf",
+      "sourcePages": [
+        242,
+        243,
+        244,
+        245,
+        246
+      ]
+    },
+    {
+      "title": "Relapse Prevention Financial Plan",
+      "page": 246,
+      "chapter": "Mental Health Integration Tools",
+      "file": "/forms/p246-relapse-prevention-financial-plan.pdf",
+      "sourcePages": [
+        247,
+        248,
+        249
+      ]
+    },
+    {
+      "title": "Communication Plan",
+      "page": 249,
+      "chapter": "Mental Health Integration Tools",
+      "file": "/forms/p249-communication-plan.pdf",
+      "sourcePages": [
+        250,
+        251
+      ]
+    },
+    {
+      "title": "Support Team Roles",
+      "page": 251,
+      "chapter": "Mental Health Integration Tools",
+      "file": "/forms/p251-support-team-roles.pdf",
+      "sourcePages": [
+        252,
+        253
+      ]
+    },
+    {
+      "title": "Human Rights Accommodation Request Letter",
+      "page": 265,
+      "chapter": "Understanding Your Rights",
+      "file": "/forms/p265-human-rights-accommodation-request-letter.pdf",
+      "sourcePages": [
+        266,
+        267
+      ]
+    },
+    {
+      "title": "Privacy Rights Protection Script",
+      "page": 267,
+      "chapter": "Understanding Your Rights",
+      "file": "/forms/p267-privacy-rights-protection-script.pdf",
+      "sourcePages": [
+        268
+      ]
+    },
+    {
+      "title": "Rights Violation Complaint Preparation Checklist",
+      "page": 268,
+      "chapter": "Understanding Your Rights",
+      "file": "/forms/p268-rights-violation-complaint-preparation-checklist.pdf",
+      "sourcePages": [
+        269,
+        270
+      ]
+    },
+    {
+      "title": "Financial Advisor Initial Contact Form",
+      "page": 275,
+      "chapter": "When to Seek Professional Help",
+      "file": "/forms/p275-financial-advisor-initial-contact-form.pdf",
+      "sourcePages": [
+        276
+      ]
+    },
+    {
+      "title": "Mental Health Professional Inquiry",
+      "page": 276,
+      "chapter": "When to Seek Professional Help",
+      "file": "/forms/p276-mental-health-professional-inquiry.pdf",
+      "sourcePages": [
+        277
+      ]
+    },
+    {
+      "title": "Credit Counselling Services Inquiry Letter",
+      "page": 277,
+      "chapter": "When to Seek Professional Help",
+      "file": "/forms/p277-credit-counselling-services-inquiry-letter.pdf",
+      "sourcePages": [
+        278
+      ]
+    },
+    {
+      "title": "Quick Reference Application Checklist",
+      "page": 296,
+      "chapter": "Government Benefit Quick Reference Guide",
+      "file": "/forms/p296-quick-reference-application-checklist.pdf",
+      "sourcePages": [
+        297
+      ]
+    },
+    {
+      "title": "Crisis Budget Worksheet",
+      "page": 299,
+      "chapter": "Financial Forms and Applications",
+      "file": "/forms/p299-crisis-budget-worksheet.pdf",
+      "sourcePages": [
+        300,
+        301
+      ]
+    },
+    {
+      "title": "Debt Negotiation Letter Template",
+      "page": 301,
+      "chapter": "Financial Forms and Applications",
+      "file": "/forms/p301-debt-negotiation-letter-template.pdf",
+      "sourcePages": [
+        302
+      ]
+    },
+    {
+      "title": "Employment Accommodation Request Form",
+      "page": 302,
+      "chapter": "Financial Forms and Applications",
+      "file": "/forms/p302-employment-accommodation-request-form.pdf",
+      "sourcePages": [
+        303
+      ]
+    },
+    {
+      "title": "Emergency Financial Assessment",
+      "page": 303,
+      "chapter": "Financial Forms and Applications",
+      "file": "/forms/p303-emergency-financial-assessment.pdf",
+      "sourcePages": [
+        304,
+        305
+      ]
+    },
+    {
+      "title": "Income Replacement Calculator",
+      "page": 305,
+      "chapter": "Financial Forms and Applications",
+      "file": "/forms/p305-income-replacement-calculator.pdf",
+      "sourcePages": [
+        306,
+        307
+      ]
+    },
+    {
+      "title": "Government Benefit Application Organizer",
+      "page": 308,
+      "chapter": "Financial Forms and Applications",
+      "file": "/forms/p308-government-benefit-application-organizer.pdf",
+      "sourcePages": [
+        309,
+        310
+      ]
+    },
+    {
+      "title": "Credit Counselling Intake Form",
+      "page": 310,
+      "chapter": "Financial Forms and Applications",
+      "file": "/forms/p310-credit-counselling-intake-form.pdf",
+      "sourcePages": [
+        311,
+        312
+      ]
+    },
+    {
+      "title": "Crisis Support Contacts",
+      "page": 324,
+      "chapter": "Emergency Contact Templates",
+      "file": "/forms/p324-crisis-support-contacts.pdf",
+      "sourcePages": [
+        325
+      ]
+    },
+    {
+      "title": "Healthcare Team Emergency Contacts",
+      "page": 325,
+      "chapter": "Emergency Contact Templates",
+      "file": "/forms/p325-healthcare-team-emergency-contacts.pdf",
+      "sourcePages": [
+        326
+      ]
+    },
+    {
+      "title": "Legal and Advocacy Emergency Contacts",
+      "page": 326,
+      "chapter": "Emergency Contact Templates",
+      "file": "/forms/p326-legal-and-advocacy-emergency-contacts.pdf",
+      "sourcePages": [
+        327
+      ]
+    },
+    {
+      "title": "Workplace Emergency Contacts",
+      "page": 327,
+      "chapter": "Emergency Contact Templates",
+      "file": "/forms/p327-workplace-emergency-contacts.pdf",
+      "sourcePages": [
+        328
+      ]
+    },
+    {
+      "title": "Medication and Pharmacy Contacts",
+      "page": 328,
+      "chapter": "Emergency Contact Templates",
+      "file": "/forms/p328-medication-and-pharmacy-contacts.pdf",
+      "sourcePages": [
+        329
+      ]
+    },
+    {
+      "title": "Technology Support Template",
+      "page": 329,
+      "chapter": "Emergency Contact Templates",
+      "file": "/forms/p329-technology-support-template.pdf",
+      "sourcePages": [
+        330,
+        331
+      ]
+    }
+  ]
+}

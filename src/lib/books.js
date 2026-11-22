@@ -25,6 +25,7 @@ const ABOUT_WORKSHOP = `<p class="about-workshop">Away from the books, Jeffrey m
 // becomes an Amazon search, localised by /amazon-links.js like the home page).
 // badge: [text, "soon" | "2027"] for unreleased books.
 // formats: what a released book comes in, when not "Paperback and ebook".
+// extra: { href, label } for one more button, e.g. the book's printable forms.
 // sample: true when the home page's "Read a Sample" section has its excerpt.
 // reviews: reader quotes, shown on the book's page and in the home page's
 // "What Readers Say" section. Plain text; escaped when shown.
@@ -90,6 +91,7 @@ export const BOOKS = [
     height: 1293,
     amazon: "https://www.amazon.ca/dp/1069611700",
     formats: "Paperback",
+    extra: { href: "/forms", label: "Printable forms" },
     sample: false,
     description:
       "When your mental health falls apart, your money often follows. A plain-language, judgment-free guide for Canadians living with depression, anxiety, bipolar disorder, ADHD or PTSD, and the families who support them: a 72-hour financial triage plan, word-for-word scripts for landlords and creditors, Canada’s disability benefits explained, and worksheets built to be filled in on a bad day. Not ten steps, not a whole staircase. Just the next one.",
@@ -207,6 +209,7 @@ export function homeCardsHtml() {
           <div class="book-actions">
             ${primary}
             ${b.sample ? `<a class="btn btn-ghost" href="#sample">Read a Sample</a>` : ""}
+            ${b.extra ? `<a class="btn btn-ghost" href="${escapeHtml(b.extra.href)}">${escapeHtml(b.extra.label)}</a>` : ""}
           </div>
         </div>
       </article>`;
@@ -271,6 +274,7 @@ function bookPage(b) {
         <div class="book-buttons">
           <a class="btn btn-primary" href="${escapeHtml(buyHref(b))}"${b.amazon ? "" : ` data-amazon="${escapeHtml(b.search)}"`} target="_blank" rel="noopener">${buyLabel}</a>
           ${b.sample ? `<a class="btn btn-ghost" href="/#sample">Read a Sample</a>` : ""}
+          ${b.extra ? `<a class="btn btn-ghost" href="${escapeHtml(b.extra.href)}">${escapeHtml(b.extra.label)}</a>` : ""}
         </div>
         ${b.amazon ? "" : bookAlertFormHtml(b)}
       </div>
